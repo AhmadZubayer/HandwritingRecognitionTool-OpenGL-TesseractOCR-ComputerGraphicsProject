@@ -1,0 +1,3926 @@
+#include <GL/glew.h>
+#include <GL/freeglut.h>
+#include <windows.h>
+#include "starting-page/characters.cpp"
+#include "starting-page/animation.cpp"
+#include "starting-page/start.cpp"
+#include "drawing-canvas/drawing_main.cpp"
+
+int main(int argc, char** argv) {
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+    glutInitWindowSize(1200, 800);
+    glutInitWindowPosition(50, 50);
+    glutCreateWindow("Handwriting Recognition Tool");
+
+    initStart();
+
+    
+    glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
+
+    glutDisplayFunc(startDisplay);
+    glutReshapeFunc(startReshape);
+    glutKeyboardFunc(startKeyboard);
+    glutSpecialFunc(startSpecial);
+    glutMouseFunc(startMouse);
+    glutTimerFunc(0, startTimer, 0);
+
+    std::cout << "[Main] Starting GLUT loop..." << std::endl;
+    glutMainLoop();
+    
+    std::cout << "[Main] GLUT loop returned. Starting Drawing Tool..." << std::endl;
+    
+    runDrawingTool();
+    
+    return 0;
+}
+
+#include <GL/glut.h>
+#include <string>
+#include <vector>
+
+
+void drawA(); void drawB(); void drawC(); void drawD(); void drawE(); void drawF();
+void drawG(); void drawH(); void drawI(); void drawJ(); void drawK(); void drawL();
+void drawM(); void drawN(); void drawO(); void drawP(); void drawQ(); void drawR();
+void drawS(); void drawT(); void drawU(); void drawV(); void drawW(); void drawX();
+void drawY(); void drawZ();
+
+
+extern float animSpeed;
+void drawWaveAnimation();
+void handleAnimationSpeed(unsigned char key, int x, int y);
+
+void drawLetter(char c) {
+    switch (c) {
+        case 'A': drawA(); break; case 'B': drawB(); break; case 'C': drawC(); break;
+        case 'D': drawD(); break; case 'E': drawE(); break; case 'F': drawF(); break;
+        case 'G': drawG(); break; case 'H': drawH(); break; case 'I': drawI(); break;
+        case 'J': drawJ(); break; case 'K': drawK(); break; case 'L': drawL(); break;
+        case 'M': drawM(); break; case 'N': drawN(); break; case 'O': drawO(); break;
+        case 'P': drawP(); break; case 'Q': drawQ(); break; case 'R': drawR(); break;
+        case 'S': drawS(); break; case 'T': drawT(); break; case 'U': drawU(); break;
+        case 'V': drawV(); break; case 'W': drawW(); break; case 'X': drawX(); break;
+        case 'Y': drawY(); break; case 'Z': drawZ(); break;
+    }
+}
+
+void drawString(const std::string& str, float x, float y, float scale, float r, float g, float b) {
+    glPushMatrix();
+    glTranslatef(x, y, 0.0f);
+    glScalef(scale, scale, 1.0f);
+    glColor3f(r, g, b);
+    for (char c : str) {
+        if (c == ' ') {
+            glTranslatef(0.4f, 0.0f, 0.0f);
+        } else {
+            drawLetter(c);
+            glTranslatef(0.5f, 0.0f, 0.0f);
+        }
+    }
+    glPopMatrix();
+}
+
+float getStringWidth(const std::string& str, float scale) {
+    float width = 0;
+    for (size_t i = 0; i < str.length(); ++i) {
+        if (str[i] == ' ') width += 0.4f * scale;
+        else width += 0.5f * scale;
+    }
+    return width;
+}
+
+void drawCenteredString(const std::string& str, float y, float scale, float r, float g, float b) {
+    float width = getStringWidth(str, scale);
+    drawString(str, -width / 2.0f, y, scale, r, g, b);
+}
+
+void drawNextButton() {
+    glPushMatrix();
+    glTranslatef(0.8f, -0.85f, 0.0f);
+    
+    
+    glColor3f(0.1f, 0.4f, 0.8f);
+    glBegin(GL_QUADS);
+    glVertex2f(-0.2f, -0.1f); glVertex2f(0.2f, -0.1f);
+    glVertex2f(0.2f, 0.1f); glVertex2f(-0.2f, 0.1f);
+    glEnd();
+    
+    
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glLineWidth(2.0f);
+    glBegin(GL_LINE_LOOP);
+    glVertex2f(-0.2f, -0.1f); glVertex2f(0.2f, -0.1f);
+    glVertex2f(0.2f, 0.1f); glVertex2f(-0.2f, 0.1f);
+    glEnd();
+    glLineWidth(1.0f);
+    
+    drawString("NEXT", -0.12f, -0.05f, 0.18f, 1.0f, 1.0f, 1.0f);
+    glPopMatrix();
+}
+
+bool transitionToMain = false;
+float zoomFactor = 1.0f;
+
+void startDisplay() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    glLoadIdentity();
+
+    glPushMatrix();
+    glScalef(zoomFactor, zoomFactor, 1.0f);
+
+    
+    glPushMatrix();
+    glTranslatef(0.0f, -0.4f, 0.0f);
+    drawWaveAnimation();
+    glPopMatrix();
+
+    
+    drawCenteredString("HANDWRITING RECOGNITION TOOL", 0.8f, 0.1f, 1.0f, 0.0f, 0.0f);
+    drawCenteredString("USING OPENGL AND GOOGLE TESSERACT  OCR", 0.65f, 0.1f, 1.0f, 0.0f, 0.0f);
+
+    
+    drawCenteredString("COURSE COMPUTER GRAPHICS", 0.4f, 0.08f, 1.0f, 1.0f, 1.0f);
+
+    
+    drawCenteredString("DEVELOPED BY", 0.15f, 0.07f, 0.8f, 0.8f, 0.8f);
+    drawCenteredString("MD ABU SAEED", 0.0f, 0.08f, 1.0f, 1.0f, 1.0f);
+    drawCenteredString("AHMAD ZUBAYER", -0.15f, 0.08f, 1.0f, 1.0f, 1.0f);
+    drawCenteredString("ROHAN RUBAYET", -0.3f, 0.08f, 1.0f, 1.0f, 1.0f);
+
+    if (transitionToMain) {
+        drawCenteredString("LOADING MAIN TOOL", -0.6f, 0.1f, 0.0f, 1.0f, 0.0f);
+    } else {
+        drawNextButton();
+    }
+
+    glPopMatrix(); 
+
+    glutSwapBuffers();
+}
+
+void startTimer(int value) {
+    glutPostRedisplay();
+    glutTimerFunc(16, startTimer, 0);
+}
+
+void startKeyboard(unsigned char key, int x, int y) {
+    switch (key) {
+        case 'a': animSpeed = 0.0f; break; 
+        case 'w': animSpeed = 0.02f; break; 
+        case '+': zoomFactor += 0.1f; break; 
+        case '-': zoomFactor -= 0.1f; if (zoomFactor < 0.1f) zoomFactor = 0.1f; break; 
+    }
+}
+
+void startSpecial(int key, int x, int y) {
+    int mod = glutGetModifiers();
+    if (key == GLUT_KEY_RIGHT && (mod == GLUT_ACTIVE_CTRL)) {
+        transitionToMain = true;
+    }
+    
+    
+    if (key == GLUT_KEY_UP) {
+        animSpeed += 0.005f;
+    } else if (key == GLUT_KEY_DOWN) {
+        animSpeed -= 0.005f;
+        if (animSpeed < 0.0f) animSpeed = 0.0f;
+    }
+}
+
+void startMouse(int button, int state, int x, int y) {
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        float width = (float)glutGet(GLUT_WINDOW_WIDTH);
+        float height = (float)glutGet(GLUT_WINDOW_HEIGHT);
+        float aspect = width / height;
+        
+        
+        float wx = ((float)x / (width / 2.0f) - 1.0f) * aspect / zoomFactor;
+        float wy = (1.0f - (float)y / (height / 2.0f)) / zoomFactor;
+        
+        
+        if (wx > 0.6f && wx < 1.0f && wy > -0.95f && wy < -0.75f) {
+            transitionToMain = true;
+            glutLeaveMainLoop();
+        }
+    }
+}
+
+void startReshape(int w, int h) {
+    glViewport(0, 0, w, h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    float aspect = (float)w / (float)h;
+    gluOrtho2D(-1.0 * aspect, 1.0 * aspect, -1.0, 1.0);
+    glMatrixMode(GL_MODELVIEW);
+}
+
+void initStart() {
+    glClearColor(0.094f, 0.094f, 0.094f, 1.0f); 
+}
+
+#include <GL/glut.h>
+#include <cmath>
+#include <vector>
+
+float animSpeed = 0.02f;
+float phase = 0.0f;
+
+struct Point {
+    float x, y;
+};
+
+void drawWaveAnimation() {
+    glColor3f(1.0f, 1.0f, 1.0f); 
+    glPointSize(2.0f);
+    glBegin(GL_POINTS);
+    for (float x = -2.0f; x <= 2.0f; x += 0.05f) {
+        for (float z = -1.0f; z <= 1.0f; z += 0.1f) {
+            float y = 0.2f * sinf(5.0f * x + phase) * cosf(5.0f * z + phase);
+            glVertex2f(x, y + z * 0.5f); 
+        }
+    }
+    glEnd();
+    phase += animSpeed;
+}
+
+void handleAnimationSpeed(unsigned char key, int x, int y) {
+    int mod = glutGetModifiers();
+    if (mod == GLUT_ACTIVE_CTRL) {
+        if (key == '+' || key == '=' || key == 43) { 
+            animSpeed += 0.005f;
+        } else if (key == '-' || key == 45 || key == 31) { 
+            animSpeed -= 0.005f;
+            if (animSpeed < 0.0f) animSpeed = 0.0f;
+        }
+    }
+}
+
+#include <GL/glut.h>
+
+void drawBezier(float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+    int segments = 20;
+    glBegin(GL_LINE_STRIP);
+    for (int i = 0; i <= segments; i++) {
+        float t = (float)i / segments;
+        float omt = 1.0f - t;
+        float x = omt * omt * omt * x1 + 3 * t * omt * omt * x2 + 3 * t * t * omt * x3 + t * t * t * x4;
+        float y = omt * omt * omt * y1 + 3 * t * omt * omt * y2 + 3 * t * t * omt * y3 + t * t * t * y4;
+        glVertex2f(x, y);
+    }
+    glEnd();
+}
+
+void drawA() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    glVertex2f(-0.15f, -0.3f); glVertex2f(0.00f, 0.3f);
+    glVertex2f(0.15f, -0.3f); glVertex2f(0.00f, 0.3f);
+    glVertex2f(-0.08f, 0.0f); glVertex2f(0.08f, 0.0f);
+    glEnd();
+}
+
+void drawB() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    glVertex2f(-0.15f, 0.3f); glVertex2f(-0.15f, -0.3f);
+    glVertex2f(-0.15f, 0.3f); glVertex2f(0.05f, 0.3f);
+    glVertex2f(-0.15f, 0.0f); glVertex2f(0.05f, 0.0f);
+    glVertex2f(-0.15f, -0.3f); glVertex2f(0.05f, -0.3f);
+    glEnd();
+    drawBezier(0.05f, 0.3f, 0.2f, 0.3f, 0.2f, 0.0f, 0.05f, 0.0f);
+    drawBezier(0.05f, 0.0f, 0.25f, 0.0f, 0.25f, -0.3f, 0.05f, -0.3f);
+}
+
+void drawC() {
+    glLineWidth(3.0f);
+    drawBezier(0.15f, 0.2f, 0.15f, 0.3f, -0.15f, 0.3f, -0.15f, 0.0f);
+    drawBezier(-0.15f, 0.0f, -0.15f, -0.3f, 0.15f, -0.3f, 0.15f, -0.2f);
+}
+
+void drawD() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    glVertex2f(-0.15f, 0.3f); glVertex2f(-0.15f, -0.3f);
+    glVertex2f(-0.15f, 0.3f); glVertex2f(0.0f, 0.3f);
+    glVertex2f(-0.15f, -0.3f); glVertex2f(0.0f, -0.3f);
+    glEnd();
+    drawBezier(0.0f, 0.3f, 0.25f, 0.3f, 0.25f, -0.3f, 0.0f, -0.3f);
+}
+
+void drawE() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(0.15f, 0.3f);
+    glVertex2f(-0.15f, 0.3f);
+    glVertex2f(-0.15f, -0.3f);
+    glVertex2f(0.15f, -0.3f);
+    glEnd();
+    glBegin(GL_LINES);
+    glVertex2f(-0.15f, 0.0f); glVertex2f(0.05f, 0.0f);
+    glEnd();
+}
+
+void drawF() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(0.15f, 0.3f);
+    glVertex2f(-0.15f, 0.3f);
+    glVertex2f(-0.15f, -0.3f);
+    glEnd();
+    glBegin(GL_LINES);
+    glVertex2f(-0.15f, 0.0f); glVertex2f(0.05f, 0.0f);
+    glEnd();
+}
+
+void drawG() {
+    glLineWidth(3.0f);
+    drawBezier(0.15f, 0.2f, 0.15f, 0.3f, -0.15f, 0.3f, -0.15f, 0.0f);
+    drawBezier(-0.15f, 0.0f, -0.15f, -0.3f, 0.15f, -0.3f, 0.15f, -0.1f);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(0.15f, -0.1f);
+    glVertex2f(0.15f, -0.1f);
+    glVertex2f(0.0f, -0.1f);
+    glEnd();
+}
+
+void drawH() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    glVertex2f(-0.15f, 0.3f); glVertex2f(-0.15f, -0.3f);
+    glVertex2f(0.15f, 0.3f); glVertex2f(0.15f, -0.3f);
+    glVertex2f(-0.15f, 0.0f); glVertex2f(0.15f, 0.0f);
+    glEnd();
+}
+
+void drawI() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    glVertex2f(-0.1f, 0.3f); glVertex2f(0.1f, 0.3f);
+    glVertex2f(0.0f, 0.3f); glVertex2f(0.0f, -0.3f);
+    glVertex2f(-0.1f, -0.3f); glVertex2f(0.1f, -0.3f);
+    glEnd();
+}
+
+void drawJ() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    glVertex2f(-0.05f, 0.3f); glVertex2f(0.15f, 0.3f);
+    glVertex2f(0.05f, 0.3f); glVertex2f(0.05f, -0.1f);
+    glEnd();
+    drawBezier(0.05f, -0.1f, 0.05f, -0.3f, -0.15f, -0.3f, -0.15f, -0.1f);
+}
+
+void drawK() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    glVertex2f(-0.15f, 0.3f); glVertex2f(-0.15f, -0.3f);
+    glVertex2f(-0.15f, 0.0f); glVertex2f(0.15f, 0.3f);
+    glVertex2f(-0.15f, 0.0f); glVertex2f(0.15f, -0.3f);
+    glEnd();
+}
+
+void drawL() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(-0.15f, 0.3f);
+    glVertex2f(-0.15f, -0.3f);
+    glVertex2f(0.15f, -0.3f);
+    glEnd();
+}
+
+void drawM() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(-0.15f, -0.3f);
+    glVertex2f(-0.15f, 0.3f);
+    glVertex2f(0.0f, 0.0f);
+    glVertex2f(0.15f, 0.3f);
+    glVertex2f(0.15f, -0.3f);
+    glEnd();
+}
+
+void drawN() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(-0.15f, -0.3f);
+    glVertex2f(-0.15f, 0.3f);
+    glVertex2f(0.15f, -0.3f);
+    glVertex2f(0.15f, 0.3f);
+    glEnd();
+}
+
+void drawO() {
+    glLineWidth(3.0f);
+    drawBezier(0.0f, 0.3f, 0.2f, 0.3f, 0.2f, -0.3f, 0.0f, -0.3f);
+    drawBezier(0.0f, -0.3f, -0.2f, -0.3f, -0.2f, 0.3f, 0.0f, 0.3f);
+}
+
+void drawP() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    glVertex2f(-0.15f, 0.3f); glVertex2f(-0.15f, -0.3f);
+    glVertex2f(-0.15f, 0.3f); glVertex2f(0.05f, 0.3f);
+    glVertex2f(-0.15f, 0.0f); glVertex2f(0.05f, 0.0f);
+    glEnd();
+    drawBezier(0.05f, 0.3f, 0.2f, 0.3f, 0.2f, 0.0f, 0.05f, 0.0f);
+}
+
+void drawQ() {
+    drawO();
+    glBegin(GL_LINES);
+    glVertex2f(0.05f, -0.1f); glVertex2f(0.2f, -0.35f);
+    glEnd();
+}
+
+void drawR() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    glVertex2f(-0.15f, 0.3f); glVertex2f(-0.15f, -0.3f);
+    glVertex2f(-0.15f, 0.3f); glVertex2f(0.05f, 0.3f);
+    glVertex2f(-0.15f, 0.0f); glVertex2f(0.05f, 0.0f);
+    glVertex2f(0.0f, 0.0f); glVertex2f(0.15f, -0.3f);
+    glEnd();
+    drawBezier(0.05f, 0.3f, 0.2f, 0.3f, 0.2f, 0.0f, 0.05f, 0.0f);
+}
+
+void drawS() {
+    glLineWidth(3.0f);
+    drawBezier(0.15f, 0.25f, 0.15f, 0.4f, -0.15f, 0.4f, -0.15f, 0.1f);
+    drawBezier(-0.15f, 0.1f, -0.15f, -0.1f, 0.15f, -0.1f, 0.15f, -0.25f);
+    drawBezier(0.15f, -0.25f, 0.15f, -0.4f, -0.15f, -0.4f, -0.15f, -0.3f);
+}
+
+void drawT() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    glVertex2f(-0.15f, 0.3f); glVertex2f(0.15f, 0.3f);
+    glVertex2f(0.0f, 0.3f); glVertex2f(0.0f, -0.3f);
+    glEnd();
+}
+
+void drawU() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    glVertex2f(-0.15f, 0.3f); glVertex2f(-0.15f, -0.1f);
+    glVertex2f(0.15f, 0.3f); glVertex2f(0.15f, -0.1f);
+    glEnd();
+    drawBezier(-0.15f, -0.1f, -0.15f, -0.3f, 0.15f, -0.3f, 0.15f, -0.1f);
+}
+
+void drawV() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(-0.15f, 0.3f);
+    glVertex2f(0.0f, -0.3f);
+    glVertex2f(0.15f, 0.3f);
+    glEnd();
+}
+
+void drawW() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(-0.2f, 0.3f);
+    glVertex2f(-0.1f, -0.3f);
+    glVertex2f(0.0f, 0.0f);
+    glVertex2f(0.1f, -0.3f);
+    glVertex2f(0.2f, 0.3f);
+    glEnd();
+}
+
+void drawX() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    glVertex2f(-0.15f, 0.3f); glVertex2f(0.15f, -0.3f);
+    glVertex2f(0.15f, 0.3f); glVertex2f(-0.15f, -0.3f);
+    glEnd();
+}
+
+void drawY() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINES);
+    glVertex2f(-0.15f, 0.3f); glVertex2f(0.0f, 0.0f);
+    glVertex2f(0.15f, 0.3f); glVertex2f(0.0f, 0.0f);
+    glVertex2f(0.0f, 0.0f); glVertex2f(0.0f, -0.3f);
+    glEnd();
+}
+
+void drawZ() {
+    glLineWidth(3.0f);
+    glBegin(GL_LINE_STRIP);
+    glVertex2f(-0.15f, 0.3f);
+    glVertex2f(0.15f, 0.3f);
+    glVertex2f(-0.15f, -0.3f);
+    glVertex2f(0.15f, -0.3f);
+    glEnd();
+}
+
+void drawDigit(int d) {
+}
+
+void drawSpace() {
+}
+
+#define _CRT_SECURE_NO_WARNINGS
+#pragma warning(push, 0)
+#include <opencv2/opencv.hpp>
+#include <tesseract/baseapi.h>
+#include <leptonica/allheaders.h>
+#pragma warning(pop)
+
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <iostream>
+#include <thread>
+#include <atomic>
+#include <mutex>
+
+#include "canvas.cpp"
+#include "ocr_engine.cpp"
+#include "ui_panel.cpp"
+
+
+Canvas    canvas;
+OCREngine ocr;
+UIPanel   ui;
+
+std::mutex        ocrMutex;
+OCRResult         lastResult;
+std::atomic<bool> ocrRunning(false);
+bool              freshResult = false;
+
+GLFWwindow* gWindow = nullptr;
+
+
+void buildUI(UIPanel&, GLFWwindow*,
+    std::function<void()>, std::function<void()>,
+    std::function<void()>, std::function<void()>,
+    std::function<void()>, std::function<void()>,
+    std::function<void(float)>, std::function<void(int)>);
+
+#include <iomanip>
+#include <sstream>
+#include <ctime>
+
+
+std::string getTimestamp() {
+    auto t = std::time(nullptr);
+    auto tm = *std::localtime(&t);
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%Y%m%d_%H%M%S");
+    return oss.str();
+}
+
+
+void triggerRecognize() {
+    if (ocrRunning) return;
+    if (!ocr.isReady()) { std::cout << "[OCR] Engine not ready.\n"; return; }
+    if (canvas.strokes.empty()) { std::cout << "[OCR] Canvas is empty.\n";  return; }
+
+    ui.setProcessing(true);
+    canvas.showBoundingBox = true;
+
+    
+    std::string timestamp = getTimestamp();
+    std::string imageFilename = "src/canvas-exports/canvas_" + timestamp + ".png";
+    if (canvas.exportToPNG(imageFilename)) {
+        std::cout << "[Export] Saved image: " << imageFilename << "\n";
+    }
+
+    
+    int w = canvas.windowWidth, h = canvas.windowHeight;
+    std::vector<unsigned char> pixels((size_t)w * h * 3);
+    glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+    cv::Mat img(h, w, CV_8UC3);
+    memcpy(img.data, pixels.data(), (size_t)w * h * 3);
+    cv::cvtColor(img, img, cv::COLOR_RGB2BGR);
+    cv::flip(img, img, 0); 
+
+    
+    float minX, minY, maxX, maxY;
+    canvas.getStrokeBounds(minX, minY, maxX, maxY);
+
+    int sx1 = std::max(0, (int)(minX * canvas.zoom + canvas.panX) - 15);
+    int sy1 = std::max(0, (int)(minY * canvas.zoom + canvas.panY) - 15);
+    int sx2 = std::min(w, (int)(maxX * canvas.zoom + canvas.panX) + 15);
+    int sy2 = std::min(h, (int)(maxY * canvas.zoom + canvas.panY) + 15);
+
+    int cropX = std::max(0, sx1);
+    int cropY = std::max(0, h - sy2);
+    int cropW = std::min(sx2 - sx1, w - cropX);
+    int cropH = std::min(sy2 - sy1, h - cropY);
+
+    if (cropW > 0 && cropH > 0) {
+        img = img(cv::Rect(cropX, cropY, cropW, cropH)).clone();
+    }
+
+    std::thread([img, timestamp]() mutable {
+        ocrRunning = true;
+        OCRResult result = ocr.recognizeMat(img, ocr.settings);
+        
+        
+        std::string txtFilename = "src/ocr-exports/ocr_" + timestamp + ".txt";
+        std::ofstream outFile(txtFilename);
+        if (outFile.is_open()) {
+            outFile << "Timestamp: " << timestamp << "\n";
+            outFile << "Confidence: " << (int)(result.success ? result.words[0].confidence : 0) << "%\n";
+            outFile << "Result:\n" << result.fullText << "\n";
+            outFile.close();
+            std::cout << "[OCR] Result saved to: " << txtFilename << "\n";
+        }
+        
+        std::cout << "\n--- OCR Result (" << timestamp << ") ---\n";
+        std::cout << result.fullText << "\n";
+        std::cout << "--------------------------------\n" << std::endl;
+
+        {
+            std::lock_guard<std::mutex> lock(ocrMutex);
+            lastResult = result;
+            freshResult = true;
+        }
+        ocrRunning = false;
+        }).detach();
+}
+
+
+void mouseButtonCallback(GLFWwindow* w, int button, int action, int mods) {
+    double mx, my;
+    glfwGetCursorPos(w, &mx, &my);
+
+    
+    ui.onMouseButton(w, button, action, mods, mx, my);
+
+    
+    if (mx < ui.panelX)
+        canvas.onMouseButton(w, button, action, mods);
+}
+
+void cursorPosCallback(GLFWwindow* w, double x, double y) {
+    ui.onMouseMove(w, x, y);
+    if (x < ui.panelX)
+        canvas.onMouseMove(w, x, y);
+}
+
+void scrollCallback(GLFWwindow* w, double xo, double yo) {
+    double mx, my;
+    glfwGetCursorPos(w, &mx, &my);
+    ui.onScroll(xo, yo, mx, my);
+    if (mx < ui.panelX)
+        canvas.onScroll(w, xo, yo);
+}
+
+void keyCallback(GLFWwindow* w, int key, int sc, int action, int mods) {
+    
+    if (key == GLFW_KEY_R && (mods & GLFW_MOD_CONTROL) && action == GLFW_PRESS) {
+        triggerRecognize(); return;
+    }
+    
+    if (key == GLFW_KEY_S && (mods & GLFW_MOD_CONTROL) && action == GLFW_PRESS) {
+        canvas.showBoundingBox = true;
+        if (canvas.exportToPNG("canvas_export.png"))
+            std::cout << "[Export] Saved: canvas_export.png\n";
+        return;
+    }
+    
+    if (key == GLFW_KEY_Z && (mods & GLFW_MOD_CONTROL) && action == GLFW_PRESS) {
+        canvas.undo(); return;
+    }
+    
+    if (key == GLFW_KEY_T && (mods & GLFW_MOD_CONTROL) && action == GLFW_PRESS) {
+        triggerRecognize(); return;
+    }
+
+    ui.onKey(key, mods, action);
+    canvas.onKey(w, key, sc, action, mods);
+
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(w, true);
+}
+
+void framebufferSizeCallback(GLFWwindow* w, int width, int height) {
+    canvas.windowWidth = width;
+    canvas.windowHeight = height;
+    glViewport(0, 0, width, height);
+}
+
+
+int runDrawingTool() {
+    std::cout << "[DrawingTool] Entering runDrawingTool()..." << std::endl;
+    if (!glfwInit()) { std::cerr << "GLFW init failed\n"; return -1; }
+
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    gWindow = glfwCreateWindow(1200, 800,
+        "Handwriting Recognition Tool  |  Ctrl+R=Recognize  Ctrl+Z=Undo  Ctrl+S=Export",
+        nullptr, nullptr);
+    if (!gWindow) { glfwTerminate(); return -1; }
+
+    glfwMakeContextCurrent(gWindow);
+    glfwSwapInterval(1);
+
+    if (glewInit() != GLEW_OK) { std::cerr << "GLEW init failed\n"; return -1; }
+
+    
+    glfwSetMouseButtonCallback(gWindow, mouseButtonCallback);
+    glfwSetCursorPosCallback(gWindow, cursorPosCallback);
+    glfwSetScrollCallback(gWindow, scrollCallback);
+    glfwSetKeyCallback(gWindow, keyCallback);
+    glfwSetFramebufferSizeCallback(gWindow, framebufferSizeCallback);
+
+    
+    canvas.init(gWindow);
+    ocr.init("C:\\Program Files\\Tesseract-OCR\\tessdata");
+
+    int winW, winH;
+    glfwGetFramebufferSize(gWindow, &winW, &winH);
+    ui.init(winW, winH);
+
+    
+    buildUI(ui, gWindow,
+         [] { triggerRecognize(); },
+         [] { canvas.clearCanvas(); },
+         [] { canvas.undo(); },
+         [] {
+            canvas.showBoundingBox = true;
+            if (canvas.exportToPNG("canvas_export.png"))
+                std::cout << "[Export] Saved: canvas_export.png\n";
+        },
+         [] {
+            if (ui.saveTextToFile("ocr_result.txt"))
+                std::cout << "[UI] Saved: ocr_result.txt\n";
+        },
+         [] { ui.copyToClipboard(gWindow); },
+         [](float v) {
+            ocr.settings.contrastAlpha = v;
+            std::cout << "[OCR] Contrast set to " << v << "\n";
+        },
+         [](int v) {
+            ocr.settings.thresholdValue = v;
+            std::cout << "[OCR] Threshold set to " << (v == 0 ? "Auto" : std::to_string(v)) << "\n";
+        }
+    );
+
+    std::cout << "=== Handwriting Recognition Tool ===\n";
+    std::cout << "Ctrl+R = Recognize   Ctrl+Z = Undo\n";
+    std::cout << "Ctrl+S = Export PNG  Ctrl+T = Re-run OCR\n";
+    std::cout << "B/1=Black  U/2=Blue  3=Red  E=Eraser\n";
+    std::cout << "+/- = Thickness   G=Grid   C=Clear\n";
+    std::cout << "F = Cycle font size in result panel\n";
+    std::cout << "=====================================\n";
+
+    
+    while (!glfwWindowShouldClose(gWindow)) {
+        glfwPollEvents();
+
+        
+        {
+            std::lock_guard<std::mutex> lock(ocrMutex);
+            if (freshResult) {
+                ui.setResult(lastResult);
+
+                
+                ui.setPreviewImage(ocr.lastPreprocessed);
+
+                
+                ui.writeTestLog("framebuffer_capture", lastResult);
+                freshResult = false;
+                std::cout << "[Main] OCR result displayed.\n";
+            }
+        }
+
+        
+        canvas.render();
+
+        
+        double mx, my;
+        glfwGetCursorPos(gWindow, &mx, &my);
+        if (mx < ui.panelX)
+            canvas.drawCursor(mx, my);
+
+        
+        glfwGetFramebufferSize(gWindow, &winW, &winH);
+        ui.render(winW, winH);
+
+        glfwSwapBuffers(gWindow);
+    }
+
+    glfwDestroyWindow(gWindow);
+    glfwTerminate();
+    return 0;
+}
+
+﻿#define _CRT_SECURE_NO_WARNINGS
+#include "canvas.h"
+#include <iostream>
+#include <algorithm>
+#include <string>
+#include <vector>
+#include <cmath>
+#include <cstring>
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
+
+static void applyColor(StrokeColor c, bool eraser) {
+    if (eraser) { glColor3f(1, 1, 1); return; }
+    switch (c) {
+    case StrokeColor::BLACK: glColor3f(0.05f, 0.05f, 0.05f); break;
+    case StrokeColor::BLUE:  glColor3f(0.10f, 0.30f, 0.90f); break;
+    case StrokeColor::RED:   glColor3f(0.90f, 0.10f, 0.15f); break;
+    }
+}
+
+
+void Canvas::init(GLFWwindow* window) {
+    glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
+    glClearColor(1, 1, 1, 1);
+    glEnable(GL_LINE_SMOOTH);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+}
+
+
+CanvasPoint Canvas::screenToCanvas(float sx, float sy) {
+    float cy = (float)windowHeight - sy;
+    return { (sx - panX) / zoom, (cy - panY) / zoom };
+}
+
+
+CanvasPoint Canvas::cubicBezier(CanvasPoint p0, CanvasPoint p1, CanvasPoint p2, CanvasPoint p3, float t) {
+    float omt = 1.0f - t;
+    float x = omt * omt * omt * p0.x + 3 * t * omt * omt * p1.x
+        + 3 * t * t * omt * p2.x + t * t * t * p3.x;
+    float y = omt * omt * omt * p0.y + 3 * t * omt * omt * p1.y
+        + 3 * t * t * omt * p2.y + t * t * t * p3.y;
+    return { x, y };
+}
+
+
+void Canvas::drawStrokeSmooth(const Stroke& stroke) {
+    auto& pts = stroke.points;
+    if (pts.size() < 2) return;
+
+    glLineWidth(stroke.thickness);
+    applyColor(stroke.color, stroke.isEraser);
+    glBegin(GL_LINE_STRIP);
+
+    if (pts.size() < 4) {
+        
+        for (auto& p : pts) glVertex2f(p.x, p.y);
+    }
+    else {
+        
+        glVertex2f(pts[0].x, pts[0].y);
+
+        
+        for (size_t i = 0; i + 3 < pts.size(); i += 3) {
+            int segments = 20;
+            for (int j = 1; j <= segments; j++) {
+                float t = (float)j / (float)segments;
+                CanvasPoint p = cubicBezier(pts[i], pts[i + 1],
+                    pts[i + 2], pts[i + 3], t);
+                glVertex2f(p.x, p.y);
+            }
+        }
+
+        
+        size_t remainder = pts.size() % 3;
+        if (remainder > 0) {
+            size_t start = pts.size() - remainder;
+            for (size_t i = start; i < pts.size(); i++)
+                glVertex2f(pts[i].x, pts[i].y);
+        }
+    }
+    glEnd();
+}
+
+
+void Canvas::drawStrokeRaw(const Stroke& stroke) {
+    if (stroke.points.size() < 2) return;
+    glLineWidth(stroke.thickness);
+    applyColor(stroke.color, stroke.isEraser);
+    glBegin(GL_LINE_STRIP);
+    for (auto& p : stroke.points) glVertex2f(p.x, p.y);
+    glEnd();
+}
+
+
+void Canvas::onMouseButton(GLFWwindow* w, int button, int action, int mods) {
+    double mx, my;
+    glfwGetCursorPos(w, &mx, &my);
+
+    if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+        isPanning = (action == GLFW_PRESS);
+        lastMouseX = mx; lastMouseY = my;
+        return;
+    }
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        if (action == GLFW_PRESS) {
+            isDrawing = true;
+            currentStroke.points.clear();
+            currentStroke.thickness = strokeThickness;
+            currentStroke.color = currentColor;
+            currentStroke.isEraser = isErasing;
+            CanvasPoint p = screenToCanvas((float)mx, (float)my);
+            currentStroke.points.push_back(p);
+        }
+        else if (action == GLFW_RELEASE && isDrawing) {
+            isDrawing = false;
+            if (!currentStroke.points.empty())
+                strokes.push_back(currentStroke);
+            currentStroke.points.clear();
+        }
+    }
+}
+
+
+void Canvas::onMouseMove(GLFWwindow* w, double xpos, double ypos) {
+    if (isPanning) {
+        panX += (float)(xpos - lastMouseX);
+        panY -= (float)(ypos - lastMouseY);
+        lastMouseX = xpos; lastMouseY = ypos;
+        return;
+    }
+    if (isDrawing) {
+        CanvasPoint p = screenToCanvas((float)xpos, (float)ypos);
+        currentStroke.points.push_back(p);
+    }
+    lastMouseX = xpos;
+    lastMouseY = ypos;
+}
+
+
+void Canvas::onScroll(GLFWwindow* w, double xoffset, double yoffset) {
+    float factor = (yoffset > 0) ? 1.1f : 0.9f;
+    double mx, my;
+    glfwGetCursorPos(w, &mx, &my);
+    float cy = (float)windowHeight - (float)my;
+    panX = (float)mx - factor * ((float)mx - panX);
+    panY = cy - factor * (cy - panY);
+    zoom *= factor;
+    zoom = std::max(0.1f, std::min(zoom, 20.0f));
+}
+
+
+void Canvas::onKey(GLFWwindow* w, int key, int scancode, int action, int mods) {
+    if (action != GLFW_PRESS && action != GLFW_REPEAT) return;
+
+    
+    if (key == GLFW_KEY_1 || key == GLFW_KEY_B) { currentColor = StrokeColor::BLACK; isErasing = false; }
+    if (key == GLFW_KEY_2 || key == GLFW_KEY_U) { currentColor = StrokeColor::BLUE;  isErasing = false; }
+    if (key == GLFW_KEY_3 || (key == GLFW_KEY_R && !(mods & GLFW_MOD_CONTROL))) {
+        currentColor = StrokeColor::RED; isErasing = false;
+    }
+    
+    if (key == GLFW_KEY_E) { isErasing = !isErasing; }
+    if (key == GLFW_KEY_C) { clearCanvas(); }
+    if (key == GLFW_KEY_Z && (mods & GLFW_MOD_CONTROL)) { undo(); }
+
+    
+    if (key == GLFW_KEY_EQUAL || key == GLFW_KEY_KP_ADD)
+        strokeThickness = std::min(strokeThickness + 1.0f, 30.0f);
+    if (key == GLFW_KEY_MINUS || key == GLFW_KEY_KP_SUBTRACT)
+        strokeThickness = std::max(strokeThickness - 1.0f, 1.0f);
+
+    
+    if (key == GLFW_KEY_S && (mods & GLFW_MOD_CONTROL)) {
+        showBoundingBox = true;
+        if (exportToPNG("canvas_export.png"))
+            std::cout << "[Export] Saved: canvas_export.png\n";
+    }
+
+    
+    if (key == GLFW_KEY_G) { showGrid = !showGrid; }
+
+    
+
+    if (key == GLFW_KEY_LEFT_BRACKET)  applyRotation(-15.0f);
+    if (key == GLFW_KEY_RIGHT_BRACKET) applyRotation(15.0f);
+
+    
+    if (key == GLFW_KEY_EQUAL && (mods & GLFW_MOD_SHIFT)) applyScale(1.2f, 1.2f);
+    if (key == GLFW_KEY_MINUS && (mods & GLFW_MOD_SHIFT)) applyScale(0.8f, 0.8f);
+
+    
+    if (key == GLFW_KEY_LEFT && !(mods & GLFW_MOD_CONTROL)) applyTranslation(-20.0f, 0.0f);
+    if (key == GLFW_KEY_RIGHT && !(mods & GLFW_MOD_CONTROL)) applyTranslation(20.0f, 0.0f);
+    if (key == GLFW_KEY_UP && !(mods & GLFW_MOD_CONTROL)) applyTranslation(0.0f, 20.0f);
+    if (key == GLFW_KEY_DOWN && !(mods & GLFW_MOD_CONTROL)) applyTranslation(0.0f, -20.0f);
+
+    
+    if (key == GLFW_KEY_Z && !(mods & GLFW_MOD_CONTROL)) {
+        smoothStrokes = !smoothStrokes;
+        std::cout << "[Canvas] Smooth strokes: "
+            << (smoothStrokes ? "ON (Bezier)" : "OFF (Raw)")
+            << "\n";
+    }
+}
+
+
+void Canvas::clearCanvas() {
+    strokes.clear();
+    currentStroke.points.clear();
+    showBoundingBox = false;
+}
+
+
+void Canvas::undo() {
+    if (!strokes.empty()) strokes.pop_back();
+}
+
+
+void Canvas::drawGrid() {
+    glLineWidth(0.5f);
+    glColor4f(0.8f, 0.8f, 0.9f, 0.6f);
+    float step = 40.0f;
+    float x0 = -panX / zoom, y0 = -panY / zoom;
+    float x1 = ((float)windowWidth - panX) / zoom;
+    float y1 = ((float)windowHeight - panY) / zoom;
+    float startX = x0 - fmodf(x0, step);
+    for (float x = startX; x < x1; x += step) {
+        glBegin(GL_LINES); glVertex2f(x, y0); glVertex2f(x, y1); glEnd();
+    }
+    float startY = y0 - fmodf(y0, step);
+    for (float y = startY; y < y1; y += step) {
+        glBegin(GL_LINES); glVertex2f(x0, y); glVertex2f(x1, y); glEnd();
+    }
+}
+
+
+void Canvas::getStrokeBounds(float& minX, float& minY, float& maxX, float& maxY) {
+    minX = minY = 1e9f;
+    maxX = maxY = -1e9f;
+    for (auto& s : strokes)
+        for (auto& p : s.points) {
+            minX = std::min(minX, p.x); maxX = std::max(maxX, p.x);
+            minY = std::min(minY, p.y); maxY = std::max(maxY, p.y);
+        }
+}
+
+void Canvas::drawBoundingBox() {
+    if (strokes.empty()) return;
+    float minX, minY, maxX, maxY;
+    getStrokeBounds(minX, minY, maxX, maxY);
+    float pad = 10.0f;
+    minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+    glLineWidth(1.5f);
+    glColor4f(0.2f, 0.6f, 1.0f, 0.8f);
+    glBegin(GL_LINE_LOOP);
+    glVertex2f(minX, minY); glVertex2f(maxX, minY);
+    glVertex2f(maxX, maxY); glVertex2f(minX, maxY);
+    glEnd();
+}
+
+
+void Canvas::drawCursor(double mx, double my) {
+    CanvasPoint p = screenToCanvas((float)mx, (float)my);
+    float r = (strokeThickness / zoom) * 0.5f;
+    glLineWidth(1.0f);
+    glColor4f(0.3f, 0.3f, 0.3f, 0.5f);
+    if (isErasing) glColor4f(1.0f, 0.3f, 0.3f, 0.7f);
+    glBegin(GL_LINE_LOOP);
+    int segs = 24;
+    for (int i = 0; i < segs; i++) {
+        float angle = 2.0f * 3.14159f * (float)i / (float)segs;
+        glVertex2f(p.x + r * cosf(angle), p.y + r * sinf(angle));
+    }
+    glEnd();
+}
+
+
+void Canvas::render() {
+    glClear(GL_COLOR_BUFFER_BIT);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0, windowWidth, 0, windowHeight, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glTranslatef(panX, panY, 0);
+    glScalef(zoom, zoom, 1);
+
+    if (showGrid) drawGrid();
+
+    
+    for (auto& stroke : strokes) {
+        if (smoothStrokes)
+            drawStrokeSmooth(stroke);
+        else
+            drawStrokeRaw(stroke);
+    }
+
+    
+    if (isDrawing && currentStroke.points.size() >= 2) {
+        if (smoothStrokes)
+            drawStrokeSmooth(currentStroke);
+        else
+            drawStrokeRaw(currentStroke);
+    }
+
+    if (showBoundingBox) drawBoundingBox();
+}
+
+
+bool Canvas::exportToPNG(const std::string& filename) {
+    int w = windowWidth, h = windowHeight;
+    std::vector<unsigned char> pixels((size_t)w * h * 3);
+    glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+
+    if (!strokes.empty()) {
+        float minX, minY, maxX, maxY;
+        getStrokeBounds(minX, minY, maxX, maxY);
+
+        int sx1 = std::max(0, (int)(minX * zoom + panX) - 15);
+        int sy1 = std::max(0, (int)(minY * zoom + panY) - 15);
+        int sx2 = std::min(w, (int)(maxX * zoom + panX) + 15);
+        int sy2 = std::min(h, (int)(maxY * zoom + panY) + 15);
+        int cw = sx2 - sx1, ch = sy2 - sy1;
+
+        if (cw > 0 && ch > 0) {
+            std::vector<unsigned char> cropped((size_t)cw * ch * 3);
+            for (int row = 0; row < ch; row++) {
+
+                int srcRow = sy1 + (ch - 1 - row);
+                memcpy(&cropped[(size_t)row * cw * 3],
+                    &pixels[(size_t)srcRow * w * 3 + sx1 * 3],
+                    (size_t)cw * 3);
+            }
+            return stbi_write_png(filename.c_str(), cw, ch, 3,
+                cropped.data(), cw * 3) != 0;
+        }
+    }
+    return stbi_write_png(filename.c_str(), w, h, 3,
+        pixels.data(), w * 3) != 0;
+}
+
+
+void Canvas::applyTranslation(float tx, float ty) {
+    for (auto& stroke : strokes)
+        for (auto& p : stroke.points) {
+            p.x += tx;
+            p.y += ty;
+        }
+}
+
+
+void Canvas::applyRotation(float degrees) {
+    float rad = degrees * 3.14159f / 180.0f;
+    float cosA = cosf(rad);
+    float sinA = sinf(rad);
+
+    
+    float minX, minY, maxX, maxY;
+    getStrokeBounds(minX, minY, maxX, maxY);
+    float cx = (minX + maxX) / 2.0f;
+    float cy = (minY + maxY) / 2.0f;
+
+    for (auto& stroke : strokes)
+        for (auto& p : stroke.points) {
+            float dx = p.x - cx;
+            float dy = p.y - cy;
+            p.x = cx + dx * cosA - dy * sinA;
+            p.y = cy + dx * sinA + dy * cosA;
+        }
+}
+
+
+void Canvas::applyScale(float sx, float sy) {
+    
+    float minX, minY, maxX, maxY;
+    getStrokeBounds(minX, minY, maxX, maxY);
+    float cx = (minX + maxX) / 2.0f;
+    float cy = (minY + maxY) / 2.0f;
+
+    for (auto& stroke : strokes)
+        for (auto& p : stroke.points) {
+            p.x = cx + (p.x - cx) * sx;
+            p.y = cy + (p.y - cy) * sy;
+        }
+}
+
+
+void Canvas::resetTransforms() {
+    rotationAngle = 0.0f;
+    scaleFactorX = 1.0f;
+    scaleFactorY = 1.0f;
+}
+#pragma once
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <vector>
+#include <string>
+
+struct CanvasPoint { float x, y; };
+enum class StrokeColor { BLACK, BLUE, RED };
+
+struct Stroke {
+    std::vector<CanvasPoint> points;
+    float thickness;
+    StrokeColor color;
+    bool isEraser;
+};
+
+class Canvas {
+public:
+    int   windowWidth = 1200;
+    int   windowHeight = 800;
+    bool  isDrawing = false;
+    bool  isErasing = false;
+    float strokeThickness = 3.0f;
+    StrokeColor currentColor = StrokeColor::BLACK;
+    float panX = 0.0f, panY = 0.0f;
+    float zoom = 1.0f;
+    bool  isPanning = false;
+    double lastMouseX = 0, lastMouseY = 0;
+    bool  showGrid = false;
+    bool  showBoundingBox = false;
+    bool  smoothStrokes = true;   
+
+    float rotationAngle = 0.0f;
+    float scaleFactorX = 1.0f;
+    float scaleFactorY = 1.0f;
+    float translateX = 0.0f;
+    float translateY = 0.0f;
+
+    void applyRotation(float degrees);
+    void applyScale(float sx, float sy);
+    void applyTranslation(float tx, float ty);
+    void resetTransforms();
+
+    std::vector<Stroke> strokes;
+    Stroke currentStroke;
+
+    void  init(GLFWwindow* window);
+    void  onMouseButton(GLFWwindow* w, int button, int action, int mods);
+    void  onMouseMove(GLFWwindow* w, double xpos, double ypos);
+    void  onScroll(GLFWwindow* w, double xoffset, double yoffset);
+    void  onKey(GLFWwindow* w, int key, int scancode, int action, int mods);
+    void  render();
+    void  clearCanvas();
+    void  undo();
+    bool  exportToPNG(const std::string& filename);
+    void  drawCursor(double mx, double my);
+    void  drawGrid();
+    void  drawBoundingBox();
+    CanvasPoint screenToCanvas(float sx, float sy);
+    void  getStrokeBounds(float& minX, float& minY, float& maxX, float& maxY);
+
+    
+    CanvasPoint cubicBezier(CanvasPoint p0, CanvasPoint p1, CanvasPoint p2, CanvasPoint p3, float t);
+    void  drawStrokeSmooth(const Stroke& stroke);
+    void  drawStrokeRaw(const Stroke& stroke);
+};
+#define _CRT_SECURE_NO_WARNINGS
+#include "ui_panel.h"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+
+
+
+
+
+static void glLine(float x0,float y0,float x1,float y1){
+    glVertex2f(x0,y0); glVertex2f(x1,y1);
+}
+static float CW = 6.0f, CH = 9.0f; 
+
+static void drawBitmapChar(char c, float ox, float oy, float s){
+    
+    glBegin(GL_LINES);
+    switch(c){
+    case 'A': glLine(0,0,2,4*s); glLine(2,4*s,4*s,0); glLine(s,2*s,3*s,2*s); break;
+    case 'B': glLine(0,0,0,4*s); glLine(0,4*s,3*s,4*s); glLine(3*s,4*s,4*s,3.5f*s);
+              glLine(4*s,3.5f*s,3*s,2*s); glLine(3*s,2*s,0,2*s);
+              glLine(3*s,2*s,4*s,s); glLine(4*s,s,3*s,0); glLine(3*s,0,0,0); break;
+    case 'C': glLine(4*s,3.5f*s,3*s,4*s); glLine(3*s,4*s,s,4*s);
+              glLine(s,4*s,0,3*s); glLine(0,3*s,0,s); glLine(0,s,s,0);
+              glLine(s,0,3*s,0); glLine(3*s,0,4*s,0.5f*s); break;
+    case 'D': glLine(0,0,0,4*s); glLine(0,4*s,2*s,4*s); glLine(2*s,4*s,4*s,3*s);
+              glLine(4*s,3*s,4*s,s); glLine(4*s,s,2*s,0); glLine(2*s,0,0,0); break;
+    case 'E': glLine(0,0,0,4*s); glLine(0,4*s,4*s,4*s); glLine(0,2*s,3*s,2*s);
+              glLine(0,0,4*s,0); break;
+    case 'F': glLine(0,0,0,4*s); glLine(0,4*s,4*s,4*s); glLine(0,2*s,3*s,2*s); break;
+    case 'G': glLine(4*s,3.5f*s,3*s,4*s); glLine(3*s,4*s,s,4*s);
+              glLine(s,4*s,0,3*s); glLine(0,3*s,0,s); glLine(0,s,s,0);
+              glLine(s,0,3*s,0); glLine(3*s,0,4*s,s); glLine(4*s,s,4*s,2*s);
+              glLine(4*s,2*s,2.5f*s,2*s); break;
+    case 'H': glLine(0,0,0,4*s); glLine(4*s,0,4*s,4*s); glLine(0,2*s,4*s,2*s); break;
+    case 'I': glLine(s,0,3*s,0); glLine(2*s,0,2*s,4*s); glLine(s,4*s,3*s,4*s); break;
+    case 'J': glLine(3*s,4*s,3*s,s); glLine(3*s,s,2*s,0); glLine(2*s,0,s,0);
+              glLine(s,0,0,s); glLine(s,4*s,4*s,4*s); break;
+    case 'K': glLine(0,0,0,4*s); glLine(0,2*s,4*s,4*s); glLine(0,2*s,4*s,0); break;
+    case 'L': glLine(0,4*s,0,0); glLine(0,0,4*s,0); break;
+    case 'M': glLine(0,0,0,4*s); glLine(0,4*s,2*s,2*s); glLine(2*s,2*s,4*s,4*s);
+              glLine(4*s,4*s,4*s,0); break;
+    case 'N': glLine(0,0,0,4*s); glLine(0,4*s,4*s,0); glLine(4*s,0,4*s,4*s); break;
+    case 'O': glLine(s,4*s,3*s,4*s); glLine(3*s,4*s,4*s,3*s); glLine(4*s,3*s,4*s,s);
+              glLine(4*s,s,3*s,0); glLine(3*s,0,s,0); glLine(s,0,0,s);
+              glLine(0,s,0,3*s); glLine(0,3*s,s,4*s); break;
+    case 'P': glLine(0,0,0,4*s); glLine(0,4*s,3*s,4*s); glLine(3*s,4*s,4*s,3.5f*s);
+              glLine(4*s,3.5f*s,4*s,2.5f*s); glLine(4*s,2.5f*s,3*s,2*s);
+              glLine(3*s,2*s,0,2*s); break;
+    case 'Q': glLine(s,4*s,3*s,4*s); glLine(3*s,4*s,4*s,3*s); glLine(4*s,3*s,4*s,s);
+              glLine(4*s,s,3*s,0); glLine(3*s,0,s,0); glLine(s,0,0,s);
+              glLine(0,s,0,3*s); glLine(0,3*s,s,4*s); glLine(2.5f*s,s,4*s,0); break;
+    case 'R': glLine(0,0,0,4*s); glLine(0,4*s,3*s,4*s); glLine(3*s,4*s,4*s,3.5f*s);
+              glLine(4*s,3.5f*s,4*s,2.5f*s); glLine(4*s,2.5f*s,3*s,2*s);
+              glLine(3*s,2*s,0,2*s); glLine(2*s,2*s,4*s,0); break;
+    case 'S': glLine(4*s,3.5f*s,3*s,4*s); glLine(3*s,4*s,s,4*s);
+              glLine(s,4*s,0,3*s); glLine(0,3*s,0,2.5f*s); glLine(0,2.5f*s,s,2*s);
+              glLine(s,2*s,3*s,2*s); glLine(3*s,2*s,4*s,1.5f*s);
+              glLine(4*s,1.5f*s,4*s,s); glLine(4*s,s,3*s,0); glLine(3*s,0,s,0);
+              glLine(s,0,0,0.5f*s); break;
+    case 'T': glLine(0,4*s,4*s,4*s); glLine(2*s,4*s,2*s,0); break;
+    case 'U': glLine(0,4*s,0,s); glLine(0,s,s,0); glLine(s,0,3*s,0);
+              glLine(3*s,0,4*s,s); glLine(4*s,s,4*s,4*s); break;
+    case 'V': glLine(0,4*s,2*s,0); glLine(2*s,0,4*s,4*s); break;
+    case 'W': glLine(0,4*s,s,0); glLine(s,0,2*s,2*s); glLine(2*s,2*s,3*s,0);
+              glLine(3*s,0,4*s,4*s); break;
+    case 'X': glLine(0,4*s,4*s,0); glLine(0,0,4*s,4*s); break;
+    case 'Y': glLine(0,4*s,2*s,2*s); glLine(4*s,4*s,2*s,2*s); glLine(2*s,2*s,2*s,0); break;
+    case 'Z': glLine(0,4*s,4*s,4*s); glLine(4*s,4*s,0,0); glLine(0,0,4*s,0); break;
+    case 'a': glLine(s,3*s,3*s,3*s); glLine(3*s,3*s,4*s,2.5f*s); glLine(4*s,2.5f*s,4*s,0);
+              glLine(4*s,s,3*s,0); glLine(3*s,0,s,0); glLine(s,0,0,s);
+              glLine(0,s,s,2*s); glLine(s,2*s,3*s,2*s); glLine(4*s,0,4*s,0); break;
+    case 'b': glLine(0,0,0,4*s); glLine(0,2*s,s,3*s); glLine(s,3*s,3*s,3*s);
+              glLine(3*s,3*s,4*s,2*s); glLine(4*s,2*s,4*s,s); glLine(4*s,s,3*s,0);
+              glLine(3*s,0,s,0); glLine(s,0,0,s); break;
+    case 'c': glLine(4*s,2.5f*s,3*s,3*s); glLine(3*s,3*s,s,3*s); glLine(s,3*s,0,2*s);
+              glLine(0,2*s,0,s); glLine(0,s,s,0); glLine(s,0,3*s,0);
+              glLine(3*s,0,4*s,0.5f*s); break;
+    case 'd': glLine(4*s,0,4*s,4*s); glLine(4*s,2*s,3*s,3*s); glLine(3*s,3*s,s,3*s);
+              glLine(s,3*s,0,2*s); glLine(0,2*s,0,s); glLine(0,s,s,0);
+              glLine(s,0,3*s,0); glLine(3*s,0,4*s,s); break;
+    case 'e': glLine(0,1.5f*s,4*s,1.5f*s); glLine(4*s,1.5f*s,4*s,2*s);
+              glLine(4*s,2*s,3*s,3*s); glLine(3*s,3*s,s,3*s); glLine(s,3*s,0,2*s);
+              glLine(0,2*s,0,s); glLine(0,s,s,0); glLine(s,0,3*s,0);
+              glLine(3*s,0,4*s,0.5f*s); break;
+    case 'f': glLine(4*s,3.5f*s,3*s,4*s); glLine(3*s,4*s,2*s,4*s);
+              glLine(2*s,4*s,s,3.5f*s); glLine(s,3.5f*s,s,0);
+              glLine(0,2*s,3*s,2*s); break;
+    case 'g': glLine(4*s,3*s,3*s,3*s); glLine(3*s,3*s,s,3*s); glLine(s,3*s,0,2*s);
+              glLine(0,2*s,0,s); glLine(0,s,s,0); glLine(s,0,3*s,0);
+              glLine(3*s,0,4*s,s); glLine(4*s,s,4*s,3*s);
+              glLine(4*s,-s,3*s,-1.5f*s); glLine(3*s,-1.5f*s,s,-1.5f*s);
+              glLine(s,-1.5f*s,0,-s); break;
+    case 'h': glLine(0,0,0,4*s); glLine(0,2*s,s,3*s); glLine(s,3*s,3*s,3*s);
+              glLine(3*s,3*s,4*s,2*s); glLine(4*s,2*s,4*s,0); break;
+    case 'i': glLine(2*s,0,2*s,3*s); glLine(2*s,3.5f*s,2*s,4*s); break;
+    case 'j': glLine(3*s,3*s,3*s,0); glLine(3*s,0,2*s,-s); glLine(2*s,-s,s,-s);
+              glLine(s,-s,0,0); glLine(3*s,3.5f*s,3*s,4*s); break;
+    case 'k': glLine(0,0,0,4*s); glLine(0,1.5f*s,4*s,3*s); glLine(0,1.5f*s,4*s,0); break;
+    case 'l': glLine(s,4*s,2*s,4*s); glLine(1.5f*s,4*s,1.5f*s,0.5f*s);
+              glLine(s,0,3*s,0); break;
+    case 'm': glLine(0,0,0,3*s); glLine(0,3*s,s,3*s); glLine(s,3*s,2*s,2*s);
+              glLine(2*s,2*s,2*s,0); glLine(2*s,3*s,3*s,3*s); glLine(3*s,3*s,4*s,2*s);
+              glLine(4*s,2*s,4*s,0); break;
+    case 'n': glLine(0,0,0,3*s); glLine(0,3*s,s,3*s); glLine(s,3*s,3*s,3*s);
+              glLine(3*s,3*s,4*s,2*s); glLine(4*s,2*s,4*s,0); break;
+    case 'o': glLine(s,3*s,3*s,3*s); glLine(3*s,3*s,4*s,2*s); glLine(4*s,2*s,4*s,s);
+              glLine(4*s,s,3*s,0); glLine(3*s,0,s,0); glLine(s,0,0,s);
+              glLine(0,s,0,2*s); glLine(0,2*s,s,3*s); break;
+    case 'p': glLine(0,-1.5f*s,0,3*s); glLine(0,2*s,s,3*s); glLine(s,3*s,3*s,3*s);
+              glLine(3*s,3*s,4*s,2*s); glLine(4*s,2*s,4*s,s); glLine(4*s,s,3*s,0);
+              glLine(3*s,0,s,0); glLine(s,0,0,s); break;
+    case 'q': glLine(4*s,-1.5f*s,4*s,3*s); glLine(4*s,2*s,3*s,3*s);
+              glLine(3*s,3*s,s,3*s); glLine(s,3*s,0,2*s); glLine(0,2*s,0,s);
+              glLine(0,s,s,0); glLine(s,0,3*s,0); glLine(3*s,0,4*s,s); break;
+    case 'r': glLine(0,0,0,3*s); glLine(0,2.5f*s,s,3*s); glLine(s,3*s,3*s,3*s);
+              glLine(3*s,3*s,4*s,2.5f*s); break;
+    case 's': glLine(4*s,2.5f*s,3*s,3*s); glLine(3*s,3*s,s,3*s);
+              glLine(s,3*s,0,2.5f*s); glLine(0,2.5f*s,0,2*s); glLine(0,2*s,s,1.5f*s);
+              glLine(s,1.5f*s,3*s,1.5f*s); glLine(3*s,1.5f*s,4*s,s);
+              glLine(4*s,s,4*s,0.5f*s); glLine(4*s,0.5f*s,3*s,0);
+              glLine(3*s,0,s,0); glLine(s,0,0,0.5f*s); break;
+    case 't': glLine(0,2*s,4*s,2*s); glLine(2*s,4*s,2*s,0.5f*s);
+              glLine(2*s,0.5f*s,3*s,0); break;
+    case 'u': glLine(0,3*s,0,s); glLine(0,s,s,0); glLine(s,0,3*s,0);
+              glLine(3*s,0,4*s,s); glLine(4*s,s,4*s,3*s); break;
+    case 'v': glLine(0,3*s,2*s,0); glLine(2*s,0,4*s,3*s); break;
+    case 'w': glLine(0,3*s,s,0); glLine(s,0,2*s,1.5f*s); glLine(2*s,1.5f*s,3*s,0);
+              glLine(3*s,0,4*s,3*s); break;
+    case 'x': glLine(0,3*s,4*s,0); glLine(0,0,4*s,3*s); break;
+    case 'y': glLine(0,3*s,2*s,1.5f*s); glLine(4*s,3*s,s,-1.5f*s); break;
+    case 'z': glLine(0,3*s,4*s,3*s); glLine(4*s,3*s,0,0); glLine(0,0,4*s,0); break;
+    case '0': glLine(s,4*s,3*s,4*s); glLine(3*s,4*s,4*s,3*s); glLine(4*s,3*s,4*s,s);
+              glLine(4*s,s,3*s,0); glLine(3*s,0,s,0); glLine(s,0,0,s);
+              glLine(0,s,0,3*s); glLine(0,3*s,s,4*s); glLine(s,3*s,3*s,s); break;
+    case '1': glLine(s,3*s,2*s,4*s); glLine(2*s,4*s,2*s,0); glLine(s,0,3*s,0); break;
+    case '2': glLine(0,3*s,s,4*s); glLine(s,4*s,3*s,4*s); glLine(3*s,4*s,4*s,3*s);
+              glLine(4*s,3*s,4*s,2.5f*s); glLine(4*s,2.5f*s,0,0); glLine(0,0,4*s,0); break;
+    case '3': glLine(0,3.5f*s,s,4*s); glLine(s,4*s,3*s,4*s); glLine(3*s,4*s,4*s,3*s);
+              glLine(4*s,3*s,4*s,2.5f*s); glLine(4*s,2.5f*s,2*s,2*s);
+              glLine(2*s,2*s,4*s,1.5f*s); glLine(4*s,1.5f*s,4*s,s);
+              glLine(4*s,s,3*s,0); glLine(3*s,0,s,0); glLine(s,0,0,0.5f*s); break;
+    case '4': glLine(3*s,0,3*s,4*s); glLine(3*s,4*s,0,1.5f*s); glLine(0,1.5f*s,4*s,1.5f*s); break;
+    case '5': glLine(4*s,4*s,0,4*s); glLine(0,4*s,0,2.5f*s); glLine(0,2.5f*s,3*s,2.5f*s);
+              glLine(3*s,2.5f*s,4*s,2*s); glLine(4*s,2*s,4*s,s); glLine(4*s,s,3*s,0);
+              glLine(3*s,0,s,0); glLine(s,0,0,0.5f*s); break;
+    case '6': glLine(4*s,3.5f*s,3*s,4*s); glLine(3*s,4*s,s,4*s); glLine(s,4*s,0,3*s);
+              glLine(0,3*s,0,s); glLine(0,s,s,0); glLine(s,0,3*s,0);
+              glLine(3*s,0,4*s,s); glLine(4*s,s,4*s,2*s); glLine(4*s,2*s,3*s,2.5f*s);
+              glLine(3*s,2.5f*s,s,2.5f*s); glLine(s,2.5f*s,0,2*s); break;
+    case '7': glLine(0,4*s,4*s,4*s); glLine(4*s,4*s,2*s,0); break;
+    case '8': glLine(s,2*s,3*s,2*s); glLine(0,3*s,s,4*s); glLine(s,4*s,3*s,4*s);
+              glLine(3*s,4*s,4*s,3*s); glLine(4*s,3*s,4*s,2.5f*s);
+              glLine(4*s,2.5f*s,3*s,2*s); glLine(3*s,2*s,4*s,1.5f*s);
+              glLine(4*s,1.5f*s,4*s,s); glLine(4*s,s,3*s,0); glLine(3*s,0,s,0);
+              glLine(s,0,0,s); glLine(0,s,0,1.5f*s); glLine(0,1.5f*s,s,2*s);
+              glLine(s,2*s,0,2.5f*s); glLine(0,2.5f*s,0,3*s); break;
+    case '9': glLine(4*s,s,3*s,0); glLine(3*s,0,s,0); glLine(s,0,0,s);
+              glLine(0,s,0,2*s); glLine(0,2*s,s,2.5f*s); glLine(s,2.5f*s,3*s,2.5f*s);
+              glLine(3*s,2.5f*s,4*s,2*s); glLine(4*s,2*s,4*s,s);
+              glLine(4*s,4*s,4*s,2*s); glLine(4*s,4*s,3*s,4*s);
+              glLine(3*s,4*s,s,4*s); glLine(s,4*s,0,3*s); glLine(0,3*s,0,2.5f*s); break;
+    case '.': glLine(2*s,0,2*s,0.5f*s); break;
+    case ',': glLine(2*s,0,1.5f*s,-s); break;
+    case '!': glLine(2*s,4*s,2*s,1.5f*s); glLine(2*s,0.5f*s,2*s,0); break;
+    case '?': glLine(0,3*s,s,4*s); glLine(s,4*s,3*s,4*s); glLine(3*s,4*s,4*s,3*s);
+              glLine(4*s,3*s,4*s,2.5f*s); glLine(4*s,2.5f*s,2*s,1.5f*s);
+              glLine(2*s,1.5f*s,2*s,s); glLine(2*s,0.3f*s,2*s,0); break;
+    case ':': glLine(2*s,2.5f*s,2*s,3*s); glLine(2*s,s,2*s,1.5f*s); break;
+    case '/': glLine(0,0,4*s,4*s); break;
+    case '-': glLine(s,2*s,3*s,2*s); break;
+    case '_': glLine(0,0,4*s,0); break;
+    case '(': glLine(3*s,4*s,s,3*s); glLine(s,3*s,s,s); glLine(s,s,3*s,0); break;
+    case ')': glLine(s,4*s,3*s,3*s); glLine(3*s,3*s,3*s,s); glLine(3*s,s,s,0); break;
+    case ' ': break;  
+    case '\n': break;
+    default:  
+        glLine(2*s,2*s,2*s,2.1f*s); break;
+    }
+    glEnd();
+    
+}
+
+
+
+void UIPanel::init(int winW, int winH) {
+    windowW = winW;
+    windowH = winH;
+    panelX  = (float)(winW - (int)panelW);
+    panelH  = (float)winH;
+}
+
+
+
+void UIPanel::drawRect(float x,float y,float w,float h,
+                       float r,float g,float b,float a){
+    glColor4f(r,g,b,a);
+    glBegin(GL_QUADS);
+    glVertex2f(x,y); glVertex2f(x+w,y);
+    glVertex2f(x+w,y+h); glVertex2f(x,y+h);
+    glEnd();
+}
+
+void UIPanel::drawRectOutline(float x,float y,float w,float h,
+                              float r,float g,float b,float a,float lw){
+    glLineWidth(lw);
+    glColor4f(r,g,b,a);
+    glBegin(GL_LINE_LOOP);
+    glVertex2f(x,y); glVertex2f(x+w,y);
+    glVertex2f(x+w,y+h); glVertex2f(x,y+h);
+    glEnd();
+}
+
+float UIPanel::charWidth(float scale){ return (CW+2)*scale; }
+
+void UIPanel::drawText(const std::string& text, float x, float y,
+                       float r, float g, float b, float scale){
+    glLineWidth(1.2f*scale);
+    glColor3f(r,g,b);
+    float cx = x;
+    for(char c : text){
+        if(c=='\n'){ cx=x; y-=(CH+3)*scale; continue; }
+        glPushMatrix();
+        glTranslatef(cx, y, 0);
+        drawBitmapChar(c, cx, y, scale*1.5f);
+        glPopMatrix();
+        cx += charWidth(scale);
+    }
+}
+
+bool UIPanel::pointInRect(double px,double py,float rx,float ry,float rw,float rh){
+    return px>=rx && px<=rx+rw && py>=ry && py<=ry+rh;
+}
+
+
+void UIPanel::drawButton(const UIButton& btn){
+    float br=0.22f,bg=0.22f,bb=0.25f;
+    if(btn.hovered){ br=0.30f;bg=0.30f;bb=0.35f; }
+    if(btn.pressed){ br=0.15f;bg=0.40f;bb=0.60f; }
+    drawRect(btn.x,btn.y,btn.w,btn.h,br,bg,bb,1.0f);
+    drawRectOutline(btn.x,btn.y,btn.w,btn.h,0.5f,0.5f,0.6f,0.8f,1.0f);
+    
+    float tw = (float)btn.label.size()*charWidth(0.9f);
+    float tx = btn.x + (btn.w - tw)*0.5f;
+    float ty = btn.y + btn.h*0.35f;
+    drawText(btn.label, tx, ty, 0.85f,0.90f,0.95f, 0.9f);
+}
+
+
+void UIPanel::drawSlider(const UISlider& sl){
+    
+    float trackY = sl.y + 5;
+    drawRect(sl.x, trackY, sl.w, 4, 0.3f,0.3f,0.35f,1.0f);
+    
+    float frac = (sl.value - sl.minVal) / (sl.maxVal - sl.minVal);
+    drawRect(sl.x, trackY, sl.w*frac, 4, 0.25f,0.55f,0.85f,1.0f);
+    
+    float kx = sl.x + sl.w*frac - 6;
+    drawRect(kx, sl.y, 12, 14, 0.7f,0.85f,1.0f,1.0f);
+    
+    std::string lbl = sl.label + ": ";
+    if(sl.label == "Contrast")
+        lbl += std::to_string((int)(sl.value*100)/100.0f).substr(0,4);
+    else
+        lbl += (sl.value == sl.minVal ? "Auto" : std::to_string((int)sl.value));
+    drawText(lbl, sl.x, sl.y+18, 0.65f,0.70f,0.75f, 0.75f);
+}
+
+
+void UIPanel::drawProcessingIndicator(int winW, int winH){
+    float cx = panelX + panelW*0.5f;
+    float cy = (float)winH * 0.5f;
+    
+    drawRect(panelX, toolbarH, panelW, (float)winH-toolbarH, 0.1f,0.1f,0.12f,0.7f);
+    
+    drawRect(cx-70, cy-20, 140, 40, 0.18f,0.18f,0.22f,1.0f);
+    drawRectOutline(cx-70, cy-20, 140, 40, 0.3f,0.6f,1.0f,1.0f, 1.5f);
+    drawText("Processing...", cx-55, cy-6, 0.3f,0.7f,1.0f, 0.9f);
+}
+
+
+void UIPanel::drawToolbar(int winW, int winH) {
+    
+    drawRect(0, (float)winH - toolbarH, (float)winW, toolbarH, 0.12f,0.12f,0.15f,1.0f);
+    drawRect(0, (float)winH - toolbarH - 1, (float)winW, 1, 0.25f,0.50f,0.85f,1.0f);
+
+    
+    for(auto& btn : buttons) drawButton(btn);
+}
+
+
+void UIPanel::drawResultPanel(int winW, int winH){
+    
+    drawRect(panelX, 0, panelW, (float)winH - toolbarH, 0.10f,0.10f,0.12f,1.0f);
+    
+    drawRect(panelX, 0, 2, (float)winH - toolbarH, 0.25f,0.50f,0.85f,1.0f);
+
+    
+    drawRect(panelX+2, (float)winH-toolbarH-30, panelW-2, 30, 0.14f,0.14f,0.18f,1.0f);
+    drawText("OCR RESULT", panelX+12, (float)winH-toolbarH-20, 0.4f,0.7f,1.0f, 1.0f);
+
+    
+    if(hasResult){
+        std::string info = "W:" + std::to_string(currentResult.wordCount)
+                         + " C:" + std::to_string(currentResult.charCount)
+                         + " T:" + std::to_string((int)currentResult.processingTimeMs) + "ms";
+        float iw = (float)info.size()*charWidth(0.7f);
+        drawText(info, panelX+panelW-iw-8, (float)winH-toolbarH-20,
+                 0.45f,0.55f,0.65f, 0.7f);
+    }
+
+    
+    float areaTop    = (float)winH - toolbarH - 32;
+    float areaBottom = 300.0f;  
+    float areaH      = areaTop - areaBottom;
+
+    
+    glEnable(GL_SCISSOR_TEST);
+    glScissor((int)panelX+2, (int)areaBottom, (int)panelW-4, (int)areaH);
+
+    if(!hasResult && !isProcessing){
+        drawText("Draw on canvas,", panelX+16, areaTop-20-scrollOffset,
+                 0.35f,0.35f,0.40f, 0.85f);
+        drawText("then press Ctrl+R", panelX+16, areaTop-38-scrollOffset,
+                 0.35f,0.35f,0.40f, 0.85f);
+        drawText("to recognize.", panelX+16, areaTop-56-scrollOffset,
+                 0.35f,0.35f,0.40f, 0.85f);
+    } else if(hasResult){
+        float lineH  = (float)(fontSize + 4);
+        float scale  = (float)fontSize / 14.0f;
+        float ty     = areaTop - 8 - scrollOffset;
+
+        
+        
+        std::istringstream ss(currentResult.fullText);
+        std::string line;
+        while(std::getline(ss, line)){
+            float tx = panelX + 10;
+            
+            std::istringstream ws(line);
+            std::string word;
+            while(ws >> word){
+                bool lowConf = false;
+                for(auto& wr : currentResult.words){
+                    if(wr.text.find(word) != std::string::npos && wr.lowConfidence()){
+                        lowConf = true; break;
+                    }
+                }
+                float wr_val = lowConf ? 1.0f : 0.88f;
+                float wg_val = lowConf ? 0.3f : 0.88f;
+                float wb_val = lowConf ? 0.3f : 0.88f;
+                drawText(word, tx, ty, wr_val, wg_val, wb_val, scale);
+                tx += (float)(word.size()+1) * charWidth(scale);
+                if(tx > panelX + panelW - 20){ tx = panelX+10; ty -= lineH; }
+            }
+            ty -= lineH;
+        }
+        
+        float contentH = (areaTop - ty);
+        maxScroll = std::max(0.0f, contentH - areaH + 20);
+    }
+
+    glDisable(GL_SCISSOR_TEST);
+
+    
+    float slY = 92.0f;
+    for(auto& sl : sliders) drawSlider(sl);
+
+    
+    
+
+    
+    if(maxScroll > 0){
+        float sbH   = areaH;
+        float thumbH= std::max(20.0f, sbH * (areaH / (areaH + maxScroll)));
+        float thumbY= areaBottom + (sbH - thumbH) * (1.0f - scrollOffset/maxScroll);
+        drawRect(panelX+panelW-8, areaBottom, 6, areaH, 0.2f,0.2f,0.22f,1.0f);
+        drawRect(panelX+panelW-7, thumbY, 4, thumbH, 0.4f,0.55f,0.75f,1.0f);
+    }
+}
+
+
+void UIPanel::render(int winW, int winH){
+    windowW = winW; windowH = winH;
+    panelX  = (float)(winW - (int)panelW);
+
+    
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix(); glLoadIdentity();
+    glOrtho(0, winW, 0, winH, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix(); glLoadIdentity();
+
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    drawToolbar(winW, winH);
+    drawResultPanel(winW, winH);
+    drawPreviewImage();
+    if(isProcessing) drawProcessingIndicator(winW, winH);
+
+    glMatrixMode(GL_PROJECTION); glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);  glPopMatrix();
+}
+
+
+void UIPanel::onMouseButton(GLFWwindow* w, int button, int action,
+                            int mods, double mx, double my){
+    
+    double fy = windowH - my;
+
+    if(button == GLFW_MOUSE_BUTTON_LEFT){
+        if(action == GLFW_PRESS){
+            
+            for(auto& btn : buttons){
+                if(pointInRect(mx, fy, btn.x, btn.y, btn.w, btn.h)){
+                    btn.pressed = true;
+                }
+            }
+            
+            for(int i=0;i<(int)sliders.size();i++){
+                auto& sl = sliders[i];
+                if(pointInRect(mx, fy, sl.x, sl.y, sl.w, 14)){
+                    draggingSlider = i;
+                }
+            }
+        } else { 
+            for(auto& btn : buttons){
+                if(btn.pressed && pointInRect(mx, fy, btn.x, btn.y, btn.w, btn.h)){
+                    if(btn.onClick) btn.onClick();
+                }
+                btn.pressed = false;
+            }
+            draggingSlider = -1;
+        }
+    }
+}
+
+
+void UIPanel::onMouseMove(GLFWwindow* w, double mx, double my){
+    double fy = windowH - my;
+    for(auto& btn : buttons)
+        btn.hovered = pointInRect(mx, fy, btn.x, btn.y, btn.w, btn.h);
+
+    if(draggingSlider >= 0){
+        auto& sl = sliders[draggingSlider];
+        float frac = std::max(0.0f, std::min(1.0f,
+                     (float)(mx - sl.x) / sl.w));
+        sl.value = sl.minVal + frac*(sl.maxVal - sl.minVal);
+        if(sl.onChange) sl.onChange(sl.value);
+    }
+}
+
+
+void UIPanel::onScroll(double xoff, double yoff, double mx, double my){
+    double fy = windowH - my;
+    
+    if(mx >= panelX){
+        scrollOffset -= (float)yoff * 20.0f;
+        scrollOffset  = std::max(0.0f, std::min(scrollOffset, maxScroll));
+    }
+}
+
+
+void UIPanel::onKey(int key, int mods, int action){
+    if(action != GLFW_PRESS) return;
+    
+    if(key == GLFW_KEY_F){
+        int sizes[] = {10,14,18,22};
+        for(int i=0;i<4;i++){
+            if(fontSize==sizes[i]){ fontSize=sizes[(i+1)%4]; break; }
+        }
+    }
+}
+
+
+void UIPanel::setResult(const OCRResult& result){
+    currentResult = result;
+    hasResult     = (result.success && !result.fullText.empty());
+    isProcessing  = false;
+    scrollOffset  = 0;
+}
+
+
+bool UIPanel::saveTextToFile(const std::string& path){
+    if(!hasResult) return false;
+    std::ofstream f(path);
+    if(!f.is_open()) return false;
+    f << currentResult.fullText;
+    f << "\n\n--- Stats ---\n";
+    f << "Words: "    << currentResult.wordCount << "\n";
+    f << "Chars: "    << currentResult.charCount << "\n";
+    f << "Time (ms): "<< (int)currentResult.processingTimeMs << "\n";
+    f.close();
+    std::cout << "[UI] Text saved to: " << path << "\n";
+    return true;
+}
+
+
+void UIPanel::copyToClipboard(GLFWwindow* w){
+    if(!hasResult) return;
+    glfwSetClipboardString(w, currentResult.fullText.c_str());
+    std::cout << "[UI] Text copied to clipboard.\n";
+}
+
+
+void UIPanel::writeTestLog(const std::string& input, const OCRResult& result){
+    std::ofstream log("ocr_test_log.txt", std::ios::app);
+    if(!log.is_open()) return;
+    log << "=== Test Case ===\n";
+    log << "Input image: " << input << "\n";
+    log << "OCR Output:  " << result.fullText << "\n";
+    log << "Words: " << result.wordCount
+        << "  Chars: " << result.charCount
+        << "  Time: "  << (int)result.processingTimeMs << "ms\n";
+    log << "Word confidences:\n";
+    for(auto& wr : result.words)
+        log << "  [" << (int)wr.confidence << "%] " << wr.text << "\n";
+    log << "\n";
+    std::cout << "[UI] Test log written.\n";
+}
+
+
+void UIPanel::setPreviewImage(const cv::Mat& img) {
+    if (img.empty()) return;
+
+    
+    if (previewTexture != 0) glDeleteTextures(1, &previewTexture);
+
+    previewImgW = img.cols;
+    previewImgH = img.rows;
+
+    glGenTextures(1, &previewTexture);
+    glBindTexture(GL_TEXTURE_2D, previewTexture);
+
+    
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    
+    GLenum format = (img.channels() == 1) ? GL_LUMINANCE : GL_BGR;
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, previewImgW, previewImgH, 0, format, GL_UNSIGNED_BYTE, img.data);
+}
+
+void UIPanel::drawPreviewImage() {
+    if (previewTexture == 0) return;
+
+    float previewBoxSize = 180.0f;
+    float px = panelX + (panelW - previewBoxSize) * 0.5f;
+    float py = 110.0f; 
+
+    
+    drawText("Preprocessed Image", px + 15, py + previewBoxSize + 8, 0.4f, 0.7f, 1.0f, 0.85f);
+    drawRectOutline(px - 2, py - 2, previewBoxSize + 4, previewBoxSize + 4, 0.3f, 0.3f, 0.4f, 1.0f, 1.5f);
+
+    
+    float aspect = (float)previewImgW / previewImgH;
+    float dw = previewBoxSize, dh = previewBoxSize;
+    if (aspect > 1.0f) dh = previewBoxSize / aspect;
+    else dw = previewBoxSize * aspect;
+
+    float dx = px + (previewBoxSize - dw) * 0.5f;
+    float dy = py + (previewBoxSize - dh) * 0.5f;
+
+    
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, previewTexture);
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+    glBegin(GL_QUADS);
+    
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(dx, dy);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f(dx + dw, dy);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f(dx + dw, dy + dh);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(dx, dy + dh);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+}
+
+
+
+void buildUI(UIPanel& ui, GLFWwindow* win,
+             std::function<void()> onRecognize,
+             std::function<void()> onClear,
+             std::function<void()> onUndo,
+             std::function<void()> onExport,
+             std::function<void()> onSaveText,
+             std::function<void()> onCopyClipboard,
+             std::function<void(float)> onContrast,
+             std::function<void(int)>   onThreshold)
+{
+    int winW, winH;
+    glfwGetFramebufferSize(win, &winW, &winH);
+
+    float tbY  = (float)winH - ui.toolbarH + 6;
+    float bH   = 34.0f;
+    float bW   = 90.0f;
+    float gap  = 6.0f;
+    float bx   = 8.0f;
+
+    
+    UIButton btnRecognize;
+    btnRecognize.label = "Recognize"; btnRecognize.x=bx; btnRecognize.y=tbY;
+    btnRecognize.w=bW; btnRecognize.h=bH; btnRecognize.onClick=onRecognize;
+    ui.buttons.push_back(btnRecognize); bx+=bW+gap;
+
+    
+    UIButton btnClear;
+    btnClear.label="Clear"; btnClear.x=bx; btnClear.y=tbY;
+    btnClear.w=70; btnClear.h=bH; btnClear.onClick=onClear;
+    ui.buttons.push_back(btnClear); bx+=70+gap;
+
+    
+    UIButton btnUndo;
+    btnUndo.label="Undo"; btnUndo.x=bx; btnUndo.y=tbY;
+    btnUndo.w=70; btnUndo.h=bH; btnUndo.onClick=onUndo;
+    ui.buttons.push_back(btnUndo); bx+=70+gap;
+
+    
+    UIButton btnExport;
+    btnExport.label="Export PNG"; btnExport.x=bx; btnExport.y=tbY;
+    btnExport.w=bW; btnExport.h=bH; btnExport.onClick=onExport;
+    ui.buttons.push_back(btnExport); bx+=bW+gap;
+
+    
+    UIButton btnSave;
+    btnSave.label="Save Text"; btnSave.x=bx; btnSave.y=tbY;
+    btnSave.w=bW; btnSave.h=bH; btnSave.onClick=onSaveText;
+    ui.buttons.push_back(btnSave); bx+=bW+gap;
+
+    
+    UIButton btnCopy;
+    btnCopy.label="Copy"; btnCopy.x=bx; btnCopy.y=tbY;
+    btnCopy.w=65; btnCopy.h=bH; btnCopy.onClick=onCopyClipboard;
+    ui.buttons.push_back(btnCopy); bx+=65+gap;
+
+    
+    UIButton btnFont;
+    btnFont.label="Font+"; btnFont.x=bx; btnFont.y=tbY;
+    btnFont.w=65; btnFont.h=bH;
+    btnFont.onClick=[&ui](){ ui.onKey(GLFW_KEY_F,0,GLFW_PRESS); };
+    ui.buttons.push_back(btnFont);
+
+    
+    UISlider slContrast;
+    slContrast.label="Contrast"; slContrast.x=(float)(winW-340); slContrast.y=60;
+    slContrast.w=160; slContrast.minVal=0.5f; slContrast.maxVal=3.0f;
+    slContrast.value=1.0f;
+    slContrast.onChange=[onContrast](float v){ onContrast(v); };
+    ui.sliders.push_back(slContrast);
+
+    
+    UISlider slThresh;
+    slThresh.label="Threshold"; slThresh.x=(float)(winW-340); slThresh.y=30;
+    slThresh.w=160; slThresh.minVal=0; slThresh.maxVal=255;
+    slThresh.value=0;
+    slThresh.onChange=[onThreshold](float v){ onThreshold((int)v); };
+    ui.sliders.push_back(slThresh);
+}
+
+#pragma once
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <string>
+#include <vector>
+#include <functional>
+#include "ocr_engine.h"
+
+
+struct UIButton {
+    float x, y, w, h;
+    std::string label;
+    bool  hovered = false;
+    bool  pressed = false;
+    std::function<void()> onClick;
+};
+
+
+struct UISlider {
+    float x, y, w;
+    float minVal, maxVal, value;
+    std::string label;
+    bool dragging = false;
+    std::function<void(float)> onChange;
+};
+
+
+class UIPanel {
+public:
+
+    std::vector<UIButton> buttons;
+    std::vector<UISlider> sliders;
+
+
+    
+    float panelX     = 850.0f;   
+    float panelY     = 0.0f;
+    float panelW     = 350.0f;
+    float panelH     = 800.0f;
+
+    
+    float toolbarH   = 48.0f;
+
+    
+    float scrollOffset   = 0.0f;
+    float maxScroll      = 0.0f;
+
+    
+    int   fontSize       = 14;   
+
+    
+    OCRResult currentResult;
+    bool      hasResult    = false;
+    bool      isProcessing = false;   
+
+    
+    float contrastValue  = 1.0f;
+    int   thresholdValue = 0;         
+
+    
+    std::function<void()>        onRecognize;
+    std::function<void()>        onClear;
+    std::function<void()>        onUndo;
+    std::function<void()>        onExport;
+    std::function<void()>        onSaveText;      
+    std::function<void()>        onCopyClipboard; 
+    std::function<void(float)>   onContrastChange;
+    std::function<void(int)>     onThresholdChange;
+
+    
+    void init(int winW, int winH);
+
+    
+    void render(int winW, int winH);
+
+    
+    void onMouseButton(GLFWwindow* w, int button, int action, int mods,
+                       double mx, double my);
+    void onMouseMove(GLFWwindow* w, double mx, double my);
+    void onScroll(double xoff, double yoff, double mx, double my);
+    void onKey(int key, int mods, int action);
+
+    
+    void setResult(const OCRResult& result);
+    void setProcessing(bool val) { isProcessing = val; }
+
+    
+    int getWordCount() const { return currentResult.wordCount; }
+    int getCharCount() const { return currentResult.charCount; }
+
+    
+    bool saveTextToFile(const std::string& path);
+
+    
+    void copyToClipboard(GLFWwindow* w);
+
+    
+    void writeTestLog(const std::string& input, const OCRResult& result);
+
+    
+    void setPreviewImage(const cv::Mat& img);
+    void drawPreviewImage();
+
+private:
+
+
+    
+    void drawToolbar(int winW, int winH);
+    void drawResultPanel(int winW, int winH);
+    void drawProcessingIndicator(int winW, int winH);
+    void drawButton(const UIButton& btn);
+    void drawSlider(const UISlider& sl);
+    void drawRect(float x, float y, float w, float h,
+                  float r, float g, float b, float a);
+    void drawRectOutline(float x, float y, float w, float h,
+                         float r, float g, float b, float a, float lw = 1.0f);
+    void drawText(const std::string& text, float x, float y,
+                  float r, float g, float b, float scale = 1.0f);
+    void drawWrappedText(const std::string& text, float x, float y,
+                         float maxW, float lineH,
+                         float r, float g, float b,
+                         float clipY0, float clipY1,
+                         const std::vector<WordResult>& words);
+
+    
+    void renderChar(char c, float& cx, float cy, float scale);
+    float charWidth(float scale);
+
+    bool pointInRect(double px, double py,
+                     float rx, float ry, float rw, float rh);
+
+    int  windowW = 1200, windowH = 800;
+
+    
+    int  draggingSlider = -1;
+
+
+    
+    GLuint previewTexture = 0;
+    int    previewImgW = 0;
+    int    previewImgH = 0;
+
+};
+
+#define _CRT_SECURE_NO_WARNINGS
+#include "ocr_engine.h"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <chrono>
+#include <cmath>
+
+
+OCREngine::OCREngine() {}
+
+OCREngine::~OCREngine() {
+    if (m_tess) {
+        m_tess->End();
+        delete m_tess;
+        m_tess = nullptr;
+    }
+}
+
+
+bool OCREngine::init(const std::string& tessDataPath) {
+    status("Initializing Tesseract OCR engine...");
+    m_tess = new tesseract::TessBaseAPI();
+    if (m_tess->Init(tessDataPath.c_str(), "eng")) {
+        status("ERROR: Failed to initialize Tesseract. Check tessdata path.");
+        m_ready = false;
+        return false;
+    }
+    m_ready = true;
+    status("Tesseract initialized successfully.");
+    return true;
+}
+
+void OCREngine::status(const std::string& msg) {
+    std::cout << "[OCR] " << msg << "\n";
+    if (onStatus) onStatus(msg);
+}
+
+
+cv::Mat OCREngine::applyContrast(const cv::Mat& img, float alpha) {
+    if (std::abs(alpha - 1.0f) < 0.01f) return img.clone();
+    cv::Mat result;
+    img.convertTo(result, -1, alpha, 0);
+    return result;
+}
+
+
+cv::Mat OCREngine::toGrayscale(const cv::Mat& img) {
+    if (img.channels() == 1) return img.clone();
+    cv::Mat gray;
+    cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
+    return gray;
+}
+
+
+cv::Mat OCREngine::applyThreshold(const cv::Mat& gray, int threshVal) {
+    cv::Mat binary;
+    if (threshVal == 0) {
+        
+        cv::threshold(gray, binary, 0, 255,
+                      cv::THRESH_BINARY | cv::THRESH_OTSU);
+    } else {
+        
+        cv::threshold(gray, binary, threshVal, 255, cv::THRESH_BINARY);
+    }
+    return binary;
+}
+
+
+cv::Mat OCREngine::applyGaussianBlur(const cv::Mat& img) {
+    cv::Mat blurred;
+    cv::GaussianBlur(img, blurred, cv::Size(3, 3), 0);
+    return blurred;
+}
+
+
+cv::Mat OCREngine::applyDilation(const cv::Mat& img) {
+    cv::Mat dilated;
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2));
+    cv::dilate(img, dilated, kernel, cv::Point(-1,-1), 1);
+    return dilated;
+}
+
+
+cv::Mat OCREngine::applyErosion(const cv::Mat& img) {
+    cv::Mat eroded;
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2, 2));
+    cv::erode(img, eroded, kernel, cv::Point(-1,-1), 1);
+    return eroded;
+}
+
+
+cv::Mat OCREngine::invertImage(const cv::Mat& img) {
+    cv::Mat inverted;
+    cv::bitwise_not(img, inverted);
+    return inverted;
+}
+
+
+cv::Mat OCREngine::correctSkew(const cv::Mat& img) {
+    
+    cv::Mat edges;
+    cv::Canny(img, edges, 50, 150, 3);
+
+    std::vector<cv::Vec4i> lines;
+    cv::HoughLinesP(edges, lines, 1, CV_PI / 180, 50, 50, 10);
+
+    if (lines.empty()) return img.clone();
+
+    double angleSum = 0;
+    int    count    = 0;
+    for (auto& line : lines) {
+        double angle = atan2((double)(line[3] - line[1]),
+                             (double)(line[2] - line[0])) * 180.0 / CV_PI;
+        if (std::abs(angle) < 30.0) {  
+            angleSum += angle;
+            count++;
+        }
+    }
+    if (count == 0) return img.clone();
+
+    double skewAngle = angleSum / count;
+    if (std::abs(skewAngle) < 0.5) return img.clone();  
+
+    status("Correcting skew by " + std::to_string(skewAngle) + " degrees");
+
+    cv::Point2f center((float)img.cols / 2.0f, (float)img.rows / 2.0f);
+    cv::Mat     rot = cv::getRotationMatrix2D(center, skewAngle, 1.0);
+    cv::Mat     corrected;
+    cv::warpAffine(img, corrected, rot, img.size(),
+                   cv::INTER_LINEAR, cv::BORDER_CONSTANT,
+                   cv::Scalar(255, 255, 255));
+    return corrected;
+}
+
+
+cv::Mat OCREngine::resizeToDPI(const cv::Mat& img, int targetDPI) {
+    
+    double scale = (double)targetDPI / 96.0;
+    if (scale <= 1.0) return img.clone();
+    cv::Mat resized;
+    cv::resize(img, resized, cv::Size(), scale, scale, cv::INTER_CUBIC);
+    return resized;
+}
+
+
+cv::Mat OCREngine::preprocess(const cv::Mat& input, const OCRSettings& s) {
+    lastOriginal = input.clone();
+
+    status("Step 1: Loading image...");
+    cv::Mat img = input.clone();
+
+    status("Step 2: Converting to grayscale...");
+    img = toGrayscale(img);
+
+    if (std::abs(s.contrastAlpha - 1.0f) > 0.01f) {
+        status("Step 2b: Applying contrast enhancement...");
+        img = applyContrast(img, s.contrastAlpha);
+    }
+
+    status("Step 4: Applying Gaussian blur...");
+    img = applyGaussianBlur(img);
+
+    status("Step 3: Applying threshold (Otsu)...");
+    img = applyThreshold(img, s.thresholdValue);
+
+    
+    double meanVal = cv::mean(img)[0];
+    if (meanVal < 127.0 || s.invertColors) {
+        status("Step 7: Inverting colors (dark background detected)...");
+        img = invertImage(img);
+    }
+
+    status("Step 5: Applying dilation...");
+    img = applyDilation(img);
+
+    status("Step 6: Applying erosion...");
+    img = applyErosion(img);
+
+    if (s.correctSkew) {
+        status("Step 8: Correcting skew...");
+        img = correctSkew(img);
+    }
+
+    status("Step 9: Resizing to 300 DPI...");
+    img = resizeToDPI(img, 300);
+
+    lastPreprocessed = img.clone();
+    status("Preprocessing complete.");
+    return img;
+}
+
+
+OCRResult OCREngine::recognize(const cv::Mat& preprocessedImg) {
+    OCRResult result;
+    if (!m_ready) {
+        status("ERROR: Tesseract not initialized.");
+        return result;
+    }
+
+    
+    status("Processing... Running OCR...");
+
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    
+    m_tess->SetImage(preprocessedImg.data,
+                     preprocessedImg.cols,
+                     preprocessedImg.rows,
+                     1,  
+                     (int)preprocessedImg.step);
+
+    
+    char* rawText = m_tess->GetUTF8Text();
+    if (rawText) {
+        result.fullText = std::string(rawText);
+        delete[] rawText;
+    }
+
+    
+    
+
+    
+    tesseract::ResultIterator* ri = m_tess->GetIterator();
+    tesseract::PageIteratorLevel level = tesseract::RIL_WORD;
+    if (ri) {
+        do {
+            const char* word = ri->GetUTF8Text(level);
+            float conf = ri->Confidence(level);
+            if (word) {
+                WordResult wr;
+                wr.text       = std::string(word);
+                wr.confidence = conf;
+                result.words.push_back(wr);
+                delete[] word;
+
+            }
+        } while (ri->Next(level));
+        delete ri;
+    }
+
+    auto endTime = std::chrono::high_resolution_clock::now();
+    result.processingTimeMs =
+        std::chrono::duration<double, std::milli>(endTime - startTime).count();
+
+    
+    result.wordCount = (int)result.words.size();
+    result.charCount = (int)result.fullText.size();
+    result.success   = !result.fullText.empty();
+
+    
+    {
+        std::ofstream log("ocr_debug_log.txt", std::ios::app);
+        log << "=== OCR Result ===\n";
+        log << result.fullText << "\n";
+        log << "Words: " << result.wordCount
+            << "  Chars: " << result.charCount
+            << "  Time: " << result.processingTimeMs << "ms\n\n";
+    }
+
+    status("OCR complete in " + std::to_string((int)result.processingTimeMs) + "ms"
+           + " | Words: " + std::to_string(result.wordCount));
+
+    m_tess->Clear();
+    return result;
+}
+
+
+OCRResult OCREngine::recognizeMat(const cv::Mat& image, const OCRSettings& s) {
+    status("Received image directly from framebuffer...");
+    if (image.empty()) {
+        status("ERROR: Empty image passed to recognizeMat");
+        return {};
+    }
+    cv::Mat processed = preprocess(image, s);
+    return recognize(processed);
+
+}
+
+OCRResult OCREngine::recognizeFile(const std::string& imagePath, const OCRSettings& s) {
+    status("Loading image: " + imagePath);
+    cv::Mat img = cv::imread(imagePath, cv::IMREAD_COLOR);
+    if (img.empty()) {
+        status("ERROR: Could not load image: " + imagePath);
+        return {};
+    }
+    cv::Mat processed = preprocess(img, s);
+    return recognize(processed);
+}
+#pragma once
+#define _CRT_SECURE_NO_WARNINGS
+
+#pragma warning(push, 0)
+#include <opencv2/opencv.hpp>
+#include <tesseract/baseapi.h>
+#include <leptonica/allheaders.h>
+#pragma warning(pop)
+
+#include <string>
+#include <vector>
+#include <functional>
+
+
+struct WordResult {
+    std::string text;
+    float       confidence;  
+    bool        lowConfidence() const { return confidence < 60.0f; }
+};
+
+struct OCRResult {
+    std::string            fullText;
+    std::vector<WordResult> words;
+    int                    charCount  = 0;
+    int                    wordCount  = 0;
+    double                 processingTimeMs = 0.0;
+    bool                   success    = false;
+};
+
+
+struct OCRSettings {
+    float contrastAlpha   = 1.0f;   
+    int   thresholdValue  = 0;      
+    bool  invertColors    = false;  
+    bool  correctSkew     = true;   
+};
+
+
+class OCREngine {
+public:
+    OCREngine();
+    ~OCREngine();
+    bool init(const std::string& tessDataPath = "C:\\tessdata");
+    bool isReady() const { return m_ready; }
+
+    cv::Mat   preprocess(const cv::Mat& input, const OCRSettings& settings = {});
+    OCRResult recognize(const cv::Mat& preprocessedImg);
+    OCRResult recognizeFile(const std::string& imagePath, const OCRSettings& settings = {});
+    OCRResult recognizeMat(const cv::Mat& image, const OCRSettings& s = {});
+
+    OCRSettings settings;
+    std::function<void(const std::string&)> onStatus;
+    cv::Mat lastPreprocessed;
+    cv::Mat lastOriginal;
+
+private:
+    tesseract::TessBaseAPI* m_tess = nullptr;
+    bool                    m_ready = false;
+
+    
+    cv::Mat toGrayscale     (const cv::Mat& img);                    
+    cv::Mat applyThreshold  (const cv::Mat& gray, int threshVal);    
+    cv::Mat applyGaussianBlur(const cv::Mat& img);                   
+    cv::Mat applyDilation   (const cv::Mat& img);                    
+    cv::Mat applyErosion    (const cv::Mat& img);                    
+    cv::Mat invertImage     (const cv::Mat& img);                    
+    cv::Mat correctSkew     (const cv::Mat& img);                    
+    cv::Mat resizeToDPI     (const cv::Mat& img, int targetDPI=300); 
+    cv::Mat applyContrast   (const cv::Mat& img, float alpha);       
+
+    void status(const std::string& msg);
+};
+
+
+
+#ifndef INCLUDE_STB_IMAGE_WRITE_H
+#define INCLUDE_STB_IMAGE_WRITE_H
+
+#include <stdlib.h>
+
+
+#ifndef STBIWDEF
+#ifdef STB_IMAGE_WRITE_STATIC
+#define STBIWDEF  static
+#else
+#ifdef __cplusplus
+#define STBIWDEF  extern "C"
+#else
+#define STBIWDEF  extern
+#endif
+#endif
+#endif
+
+#ifndef STB_IMAGE_WRITE_STATIC  
+STBIWDEF int stbi_write_tga_with_rle;
+STBIWDEF int stbi_write_png_compression_level;
+STBIWDEF int stbi_write_force_png_filter;
+#endif
+
+#ifndef STBI_WRITE_NO_STDIO
+STBIWDEF int stbi_write_png(char const *filename, int w, int h, int comp, const void  *data, int stride_in_bytes);
+STBIWDEF int stbi_write_bmp(char const *filename, int w, int h, int comp, const void  *data);
+STBIWDEF int stbi_write_tga(char const *filename, int w, int h, int comp, const void  *data);
+STBIWDEF int stbi_write_hdr(char const *filename, int w, int h, int comp, const float *data);
+STBIWDEF int stbi_write_jpg(char const *filename, int x, int y, int comp, const void  *data, int quality);
+
+#ifdef STBIW_WINDOWS_UTF8
+STBIWDEF int stbiw_convert_wchar_to_utf8(char *buffer, size_t bufferlen, const wchar_t* input);
+#endif
+#endif
+
+typedef void stbi_write_func(void *context, void *data, int size);
+
+STBIWDEF int stbi_write_png_to_func(stbi_write_func *func, void *context, int w, int h, int comp, const void  *data, int stride_in_bytes);
+STBIWDEF int stbi_write_bmp_to_func(stbi_write_func *func, void *context, int w, int h, int comp, const void  *data);
+STBIWDEF int stbi_write_tga_to_func(stbi_write_func *func, void *context, int w, int h, int comp, const void  *data);
+STBIWDEF int stbi_write_hdr_to_func(stbi_write_func *func, void *context, int w, int h, int comp, const float *data);
+STBIWDEF int stbi_write_jpg_to_func(stbi_write_func *func, void *context, int x, int y, int comp, const void  *data, int quality);
+
+STBIWDEF void stbi_flip_vertically_on_write(int flip_boolean);
+
+#endif
+
+#ifdef STB_IMAGE_WRITE_IMPLEMENTATION
+
+#ifdef _WIN32
+   #ifndef _CRT_SECURE_NO_WARNINGS
+   #define _CRT_SECURE_NO_WARNINGS
+   #endif
+   #ifndef _CRT_NONSTDC_NO_DEPRECATE
+   #define _CRT_NONSTDC_NO_DEPRECATE
+   #endif
+#endif
+
+#ifndef STBI_WRITE_NO_STDIO
+#include <stdio.h>
+#endif 
+
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
+
+#if defined(STBIW_MALLOC) && defined(STBIW_FREE) && (defined(STBIW_REALLOC) || defined(STBIW_REALLOC_SIZED))
+
+#elif !defined(STBIW_MALLOC) && !defined(STBIW_FREE) && !defined(STBIW_REALLOC) && !defined(STBIW_REALLOC_SIZED)
+
+#else
+#error "Must define all or none of STBIW_MALLOC, STBIW_FREE, and STBIW_REALLOC (or STBIW_REALLOC_SIZED)."
+#endif
+
+#ifndef STBIW_MALLOC
+#define STBIW_MALLOC(sz)        malloc(sz)
+#define STBIW_REALLOC(p,newsz)  realloc(p,newsz)
+#define STBIW_FREE(p)           free(p)
+#endif
+
+#ifndef STBIW_REALLOC_SIZED
+#define STBIW_REALLOC_SIZED(p,oldsz,newsz) STBIW_REALLOC(p,newsz)
+#endif
+
+
+#ifndef STBIW_MEMMOVE
+#define STBIW_MEMMOVE(a,b,sz) memmove(a,b,sz)
+#endif
+
+
+#ifndef STBIW_ASSERT
+#include <assert.h>
+#define STBIW_ASSERT(x) assert(x)
+#endif
+
+#define STBIW_UCHAR(x) (unsigned char) ((x) & 0xff)
+
+#ifdef STB_IMAGE_WRITE_STATIC
+static int stbi_write_png_compression_level = 8;
+static int stbi_write_tga_with_rle = 1;
+static int stbi_write_force_png_filter = -1;
+#else
+int stbi_write_png_compression_level = 8;
+int stbi_write_tga_with_rle = 1;
+int stbi_write_force_png_filter = -1;
+#endif
+
+static int stbi__flip_vertically_on_write = 0;
+
+STBIWDEF void stbi_flip_vertically_on_write(int flag)
+{
+   stbi__flip_vertically_on_write = flag;
+}
+
+typedef struct
+{
+   stbi_write_func *func;
+   void *context;
+   unsigned char buffer[64];
+   int buf_used;
+} stbi__write_context;
+
+
+static void stbi__start_write_callbacks(stbi__write_context *s, stbi_write_func *c, void *context)
+{
+   s->func    = c;
+   s->context = context;
+}
+
+#ifndef STBI_WRITE_NO_STDIO
+
+static void stbi__stdio_write(void *context, void *data, int size)
+{
+   fwrite(data,1,size,(FILE*) context);
+}
+
+#if defined(_WIN32) && defined(STBIW_WINDOWS_UTF8)
+#ifdef __cplusplus
+#define STBIW_EXTERN extern "C"
+#else
+#define STBIW_EXTERN extern
+#endif
+STBIW_EXTERN __declspec(dllimport) int __stdcall MultiByteToWideChar(unsigned int cp, unsigned long flags, const char *str, int cbmb, wchar_t *widestr, int cchwide);
+STBIW_EXTERN __declspec(dllimport) int __stdcall WideCharToMultiByte(unsigned int cp, unsigned long flags, const wchar_t *widestr, int cchwide, char *str, int cbmb, const char *defchar, int *used_default);
+
+STBIWDEF int stbiw_convert_wchar_to_utf8(char *buffer, size_t bufferlen, const wchar_t* input)
+{
+   return WideCharToMultiByte(65001 , 0, input, -1, buffer, (int) bufferlen, NULL, NULL);
+}
+#endif
+
+static FILE *stbiw__fopen(char const *filename, char const *mode)
+{
+   FILE *f;
+#if defined(_WIN32) && defined(STBIW_WINDOWS_UTF8)
+   wchar_t wMode[64];
+   wchar_t wFilename[1024];
+   if (0 == MultiByteToWideChar(65001 , 0, filename, -1, wFilename, sizeof(wFilename)/sizeof(*wFilename)))
+      return 0;
+
+   if (0 == MultiByteToWideChar(65001 , 0, mode, -1, wMode, sizeof(wMode)/sizeof(*wMode)))
+      return 0;
+
+#if defined(_MSC_VER) && _MSC_VER >= 1400
+   if (0 != _wfopen_s(&f, wFilename, wMode))
+      f = 0;
+#else
+   f = _wfopen(wFilename, wMode);
+#endif
+
+#elif defined(_MSC_VER) && _MSC_VER >= 1400
+   if (0 != fopen_s(&f, filename, mode))
+      f=0;
+#else
+   f = fopen(filename, mode);
+#endif
+   return f;
+}
+
+static int stbi__start_write_file(stbi__write_context *s, const char *filename)
+{
+   FILE *f = stbiw__fopen(filename, "wb");
+   stbi__start_write_callbacks(s, stbi__stdio_write, (void *) f);
+   return f != NULL;
+}
+
+static void stbi__end_write_file(stbi__write_context *s)
+{
+   fclose((FILE *)s->context);
+}
+
+#endif 
+
+typedef unsigned int stbiw_uint32;
+typedef int stb_image_write_test[sizeof(stbiw_uint32)==4 ? 1 : -1];
+
+static void stbiw__writefv(stbi__write_context *s, const char *fmt, va_list v)
+{
+   while (*fmt) {
+      switch (*fmt++) {
+         case ' ': break;
+         case '1': { unsigned char x = STBIW_UCHAR(va_arg(v, int));
+                     s->func(s->context,&x,1);
+                     break; }
+         case '2': { int x = va_arg(v,int);
+                     unsigned char b[2];
+                     b[0] = STBIW_UCHAR(x);
+                     b[1] = STBIW_UCHAR(x>>8);
+                     s->func(s->context,b,2);
+                     break; }
+         case '4': { stbiw_uint32 x = va_arg(v,int);
+                     unsigned char b[4];
+                     b[0]=STBIW_UCHAR(x);
+                     b[1]=STBIW_UCHAR(x>>8);
+                     b[2]=STBIW_UCHAR(x>>16);
+                     b[3]=STBIW_UCHAR(x>>24);
+                     s->func(s->context,b,4);
+                     break; }
+         default:
+            STBIW_ASSERT(0);
+            return;
+      }
+   }
+}
+
+static void stbiw__writef(stbi__write_context *s, const char *fmt, ...)
+{
+   va_list v;
+   va_start(v, fmt);
+   stbiw__writefv(s, fmt, v);
+   va_end(v);
+}
+
+static void stbiw__write_flush(stbi__write_context *s)
+{
+   if (s->buf_used) {
+      s->func(s->context, &s->buffer, s->buf_used);
+      s->buf_used = 0;
+   }
+}
+
+static void stbiw__putc(stbi__write_context *s, unsigned char c)
+{
+   s->func(s->context, &c, 1);
+}
+
+static void stbiw__write1(stbi__write_context *s, unsigned char a)
+{
+   if ((size_t)s->buf_used + 1 > sizeof(s->buffer))
+      stbiw__write_flush(s);
+   s->buffer[s->buf_used++] = a;
+}
+
+static void stbiw__write3(stbi__write_context *s, unsigned char a, unsigned char b, unsigned char c)
+{
+   int n;
+   if ((size_t)s->buf_used + 3 > sizeof(s->buffer))
+      stbiw__write_flush(s);
+   n = s->buf_used;
+   s->buf_used = n+3;
+   s->buffer[n+0] = a;
+   s->buffer[n+1] = b;
+   s->buffer[n+2] = c;
+}
+
+static void stbiw__write_pixel(stbi__write_context *s, int rgb_dir, int comp, int write_alpha, int expand_mono, unsigned char *d)
+{
+   unsigned char bg[3] = { 255, 0, 255}, px[3];
+   int k;
+
+   if (write_alpha < 0)
+      stbiw__write1(s, d[comp - 1]);
+
+   switch (comp) {
+      case 2: 
+      case 1:
+         if (expand_mono)
+            stbiw__write3(s, d[0], d[0], d[0]); 
+         else
+            stbiw__write1(s, d[0]);  
+         break;
+      case 4:
+         if (!write_alpha) {
+            
+            for (k = 0; k < 3; ++k)
+               px[k] = bg[k] + ((d[k] - bg[k]) * d[3]) / 255;
+            stbiw__write3(s, px[1 - rgb_dir], px[1], px[1 + rgb_dir]);
+            break;
+         }
+         
+      case 3:
+         stbiw__write3(s, d[1 - rgb_dir], d[1], d[1 + rgb_dir]);
+         break;
+   }
+   if (write_alpha > 0)
+      stbiw__write1(s, d[comp - 1]);
+}
+
+static void stbiw__write_pixels(stbi__write_context *s, int rgb_dir, int vdir, int x, int y, int comp, void *data, int write_alpha, int scanline_pad, int expand_mono)
+{
+   stbiw_uint32 zero = 0;
+   int i,j, j_end;
+
+   if (y <= 0)
+      return;
+
+   if (stbi__flip_vertically_on_write)
+      vdir *= -1;
+
+   if (vdir < 0) {
+      j_end = -1; j = y-1;
+   } else {
+      j_end =  y; j = 0;
+   }
+
+   for (; j != j_end; j += vdir) {
+      for (i=0; i < x; ++i) {
+         unsigned char *d = (unsigned char *) data + (j*x+i)*comp;
+         stbiw__write_pixel(s, rgb_dir, comp, write_alpha, expand_mono, d);
+      }
+      stbiw__write_flush(s);
+      s->func(s->context, &zero, scanline_pad);
+   }
+}
+
+static int stbiw__outfile(stbi__write_context *s, int rgb_dir, int vdir, int x, int y, int comp, int expand_mono, void *data, int alpha, int pad, const char *fmt, ...)
+{
+   if (y < 0 || x < 0) {
+      return 0;
+   } else {
+      va_list v;
+      va_start(v, fmt);
+      stbiw__writefv(s, fmt, v);
+      va_end(v);
+      stbiw__write_pixels(s,rgb_dir,vdir,x,y,comp,data,alpha,pad, expand_mono);
+      return 1;
+   }
+}
+
+static int stbi_write_bmp_core(stbi__write_context *s, int x, int y, int comp, const void *data)
+{
+   if (comp != 4) {
+      
+      int pad = (-x*3) & 3;
+      return stbiw__outfile(s,-1,-1,x,y,comp,1,(void *) data,0,pad,
+              "11 4 22 4" "4 44 22 444444",
+              'B', 'M', 14+40+(x*3+pad)*y, 0,0, 14+40,  
+               40, x,y, 1,24, 0,0,0,0,0,0);             
+   } else {
+      
+      
+      
+      return stbiw__outfile(s,-1,-1,x,y,comp,1,(void *)data,1,0,
+         "11 4 22 4" "4 44 22 444444 4444 4 444 444 444 444",
+         'B', 'M', 14+108+x*y*4, 0, 0, 14+108, 
+         108, x,y, 1,32, 3,0,0,0,0,0, 0xff0000,0xff00,0xff,0xff000000u, 0, 0,0,0, 0,0,0, 0,0,0, 0,0,0); 
+   }
+}
+
+STBIWDEF int stbi_write_bmp_to_func(stbi_write_func *func, void *context, int x, int y, int comp, const void *data)
+{
+   stbi__write_context s = { 0 };
+   stbi__start_write_callbacks(&s, func, context);
+   return stbi_write_bmp_core(&s, x, y, comp, data);
+}
+
+#ifndef STBI_WRITE_NO_STDIO
+STBIWDEF int stbi_write_bmp(char const *filename, int x, int y, int comp, const void *data)
+{
+   stbi__write_context s = { 0 };
+   if (stbi__start_write_file(&s,filename)) {
+      int r = stbi_write_bmp_core(&s, x, y, comp, data);
+      stbi__end_write_file(&s);
+      return r;
+   } else
+      return 0;
+}
+#endif 
+
+static int stbi_write_tga_core(stbi__write_context *s, int x, int y, int comp, void *data)
+{
+   int has_alpha = (comp == 2 || comp == 4);
+   int colorbytes = has_alpha ? comp-1 : comp;
+   int format = colorbytes < 2 ? 3 : 2; 
+
+   if (y < 0 || x < 0)
+      return 0;
+
+   if (!stbi_write_tga_with_rle) {
+      return stbiw__outfile(s, -1, -1, x, y, comp, 0, (void *) data, has_alpha, 0,
+         "111 221 2222 11", 0, 0, format, 0, 0, 0, 0, 0, x, y, (colorbytes + has_alpha) * 8, has_alpha * 8);
+   } else {
+      int i,j,k;
+      int jend, jdir;
+
+      stbiw__writef(s, "111 221 2222 11", 0,0,format+8, 0,0,0, 0,0,x,y, (colorbytes + has_alpha) * 8, has_alpha * 8);
+
+      if (stbi__flip_vertically_on_write) {
+         j = 0;
+         jend = y;
+         jdir = 1;
+      } else {
+         j = y-1;
+         jend = -1;
+         jdir = -1;
+      }
+      for (; j != jend; j += jdir) {
+         unsigned char *row = (unsigned char *) data + j * x * comp;
+         int len;
+
+         for (i = 0; i < x; i += len) {
+            unsigned char *begin = row + i * comp;
+            int diff = 1;
+            len = 1;
+
+            if (i < x - 1) {
+               ++len;
+               diff = memcmp(begin, row + (i + 1) * comp, comp);
+               if (diff) {
+                  const unsigned char *prev = begin;
+                  for (k = i + 2; k < x && len < 128; ++k) {
+                     if (memcmp(prev, row + k * comp, comp)) {
+                        prev += comp;
+                        ++len;
+                     } else {
+                        --len;
+                        break;
+                     }
+                  }
+               } else {
+                  for (k = i + 2; k < x && len < 128; ++k) {
+                     if (!memcmp(begin, row + k * comp, comp)) {
+                        ++len;
+                     } else {
+                        break;
+                     }
+                  }
+               }
+            }
+
+            if (diff) {
+               unsigned char header = STBIW_UCHAR(len - 1);
+               stbiw__write1(s, header);
+               for (k = 0; k < len; ++k) {
+                  stbiw__write_pixel(s, -1, comp, has_alpha, 0, begin + k * comp);
+               }
+            } else {
+               unsigned char header = STBIW_UCHAR(len - 129);
+               stbiw__write1(s, header);
+               stbiw__write_pixel(s, -1, comp, has_alpha, 0, begin);
+            }
+         }
+      }
+      stbiw__write_flush(s);
+   }
+   return 1;
+}
+
+STBIWDEF int stbi_write_tga_to_func(stbi_write_func *func, void *context, int x, int y, int comp, const void *data)
+{
+   stbi__write_context s = { 0 };
+   stbi__start_write_callbacks(&s, func, context);
+   return stbi_write_tga_core(&s, x, y, comp, (void *) data);
+}
+
+#ifndef STBI_WRITE_NO_STDIO
+STBIWDEF int stbi_write_tga(char const *filename, int x, int y, int comp, const void *data)
+{
+   stbi__write_context s = { 0 };
+   if (stbi__start_write_file(&s,filename)) {
+      int r = stbi_write_tga_core(&s, x, y, comp, (void *) data);
+      stbi__end_write_file(&s);
+      return r;
+   } else
+      return 0;
+}
+#endif
+
+
+
+
+
+#define stbiw__max(a, b)  ((a) > (b) ? (a) : (b))
+
+#ifndef STBI_WRITE_NO_STDIO
+
+static void stbiw__linear_to_rgbe(unsigned char *rgbe, float *linear)
+{
+   int exponent;
+   float maxcomp = stbiw__max(linear[0], stbiw__max(linear[1], linear[2]));
+
+   if (maxcomp < 1e-32f) {
+      rgbe[0] = rgbe[1] = rgbe[2] = rgbe[3] = 0;
+   } else {
+      float normalize = (float) frexp(maxcomp, &exponent) * 256.0f/maxcomp;
+
+      rgbe[0] = (unsigned char)(linear[0] * normalize);
+      rgbe[1] = (unsigned char)(linear[1] * normalize);
+      rgbe[2] = (unsigned char)(linear[2] * normalize);
+      rgbe[3] = (unsigned char)(exponent + 128);
+   }
+}
+
+static void stbiw__write_run_data(stbi__write_context *s, int length, unsigned char databyte)
+{
+   unsigned char lengthbyte = STBIW_UCHAR(length+128);
+   STBIW_ASSERT(length+128 <= 255);
+   s->func(s->context, &lengthbyte, 1);
+   s->func(s->context, &databyte, 1);
+}
+
+static void stbiw__write_dump_data(stbi__write_context *s, int length, unsigned char *data)
+{
+   unsigned char lengthbyte = STBIW_UCHAR(length);
+   STBIW_ASSERT(length <= 128); 
+   s->func(s->context, &lengthbyte, 1);
+   s->func(s->context, data, length);
+}
+
+static void stbiw__write_hdr_scanline(stbi__write_context *s, int width, int ncomp, unsigned char *scratch, float *scanline)
+{
+   unsigned char scanlineheader[4] = { 2, 2, 0, 0 };
+   unsigned char rgbe[4];
+   float linear[3];
+   int x;
+
+   scanlineheader[2] = (width&0xff00)>>8;
+   scanlineheader[3] = (width&0x00ff);
+
+   
+   if (width < 8 || width >= 32768) {
+      for (x=0; x < width; x++) {
+         switch (ncomp) {
+            case 4: 
+            case 3: linear[2] = scanline[x*ncomp + 2];
+                    linear[1] = scanline[x*ncomp + 1];
+                    linear[0] = scanline[x*ncomp + 0];
+                    break;
+            default:
+                    linear[0] = linear[1] = linear[2] = scanline[x*ncomp + 0];
+                    break;
+         }
+         stbiw__linear_to_rgbe(rgbe, linear);
+         s->func(s->context, rgbe, 4);
+      }
+   } else {
+      int c,r;
+      
+      for (x=0; x < width; x++) {
+         switch(ncomp) {
+            case 4: 
+            case 3: linear[2] = scanline[x*ncomp + 2];
+                    linear[1] = scanline[x*ncomp + 1];
+                    linear[0] = scanline[x*ncomp + 0];
+                    break;
+            default:
+                    linear[0] = linear[1] = linear[2] = scanline[x*ncomp + 0];
+                    break;
+         }
+         stbiw__linear_to_rgbe(rgbe, linear);
+         scratch[x + width*0] = rgbe[0];
+         scratch[x + width*1] = rgbe[1];
+         scratch[x + width*2] = rgbe[2];
+         scratch[x + width*3] = rgbe[3];
+      }
+
+      s->func(s->context, scanlineheader, 4);
+
+      
+      for (c=0; c < 4; c++) {
+         unsigned char *comp = &scratch[width*c];
+
+         x = 0;
+         while (x < width) {
+            
+            r = x;
+            while (r+2 < width) {
+               if (comp[r] == comp[r+1] && comp[r] == comp[r+2])
+                  break;
+               ++r;
+            }
+            if (r+2 >= width)
+               r = width;
+            
+            while (x < r) {
+               int len = r-x;
+               if (len > 128) len = 128;
+               stbiw__write_dump_data(s, len, &comp[x]);
+               x += len;
+            }
+            
+            if (r+2 < width) { 
+               
+               while (r < width && comp[r] == comp[x])
+                  ++r;
+               
+               while (x < r) {
+                  int len = r-x;
+                  if (len > 127) len = 127;
+                  stbiw__write_run_data(s, len, comp[x]);
+                  x += len;
+               }
+            }
+         }
+      }
+   }
+}
+
+static int stbi_write_hdr_core(stbi__write_context *s, int x, int y, int comp, float *data)
+{
+   if (y <= 0 || x <= 0 || data == NULL)
+      return 0;
+   else {
+      
+      unsigned char *scratch = (unsigned char *) STBIW_MALLOC(x*4);
+      int i, len;
+      char buffer[128];
+      char header[] = "#?RADIANCE\n# Written by stb_image_write.h\nFORMAT=32-bit_rle_rgbe\n";
+      s->func(s->context, header, sizeof(header)-1);
+
+#ifdef __STDC_LIB_EXT1__
+      len = sprintf_s(buffer, sizeof(buffer), "EXPOSURE=          1.0000000000000\n\n-Y %d +X %d\n", y, x);
+#else
+      len = sprintf(buffer, "EXPOSURE=          1.0000000000000\n\n-Y %d +X %d\n", y, x);
+#endif
+      s->func(s->context, buffer, len);
+
+      for(i=0; i < y; i++)
+         stbiw__write_hdr_scanline(s, x, comp, scratch, data + comp*x*(stbi__flip_vertically_on_write ? y-1-i : i));
+      STBIW_FREE(scratch);
+      return 1;
+   }
+}
+
+STBIWDEF int stbi_write_hdr_to_func(stbi_write_func *func, void *context, int x, int y, int comp, const float *data)
+{
+   stbi__write_context s = { 0 };
+   stbi__start_write_callbacks(&s, func, context);
+   return stbi_write_hdr_core(&s, x, y, comp, (float *) data);
+}
+
+STBIWDEF int stbi_write_hdr(char const *filename, int x, int y, int comp, const float *data)
+{
+   stbi__write_context s = { 0 };
+   if (stbi__start_write_file(&s,filename)) {
+      int r = stbi_write_hdr_core(&s, x, y, comp, (float *) data);
+      stbi__end_write_file(&s);
+      return r;
+   } else
+      return 0;
+}
+#endif 
+
+
+
+
+
+
+
+#ifndef STBIW_ZLIB_COMPRESS
+
+#define stbiw__sbraw(a) ((int *) (void *) (a) - 2)
+#define stbiw__sbm(a)   stbiw__sbraw(a)[0]
+#define stbiw__sbn(a)   stbiw__sbraw(a)[1]
+
+#define stbiw__sbneedgrow(a,n)  ((a)==0 || stbiw__sbn(a)+n >= stbiw__sbm(a))
+#define stbiw__sbmaybegrow(a,n) (stbiw__sbneedgrow(a,(n)) ? stbiw__sbgrow(a,n) : 0)
+#define stbiw__sbgrow(a,n)  stbiw__sbgrowf((void **) &(a), (n), sizeof(*(a)))
+
+#define stbiw__sbpush(a, v)      (stbiw__sbmaybegrow(a,1), (a)[stbiw__sbn(a)++] = (v))
+#define stbiw__sbcount(a)        ((a) ? stbiw__sbn(a) : 0)
+#define stbiw__sbfree(a)         ((a) ? STBIW_FREE(stbiw__sbraw(a)),0 : 0)
+
+static void *stbiw__sbgrowf(void **arr, int increment, int itemsize)
+{
+   int m = *arr ? 2*stbiw__sbm(*arr)+increment : increment+1;
+   void *p = STBIW_REALLOC_SIZED(*arr ? stbiw__sbraw(*arr) : 0, *arr ? (stbiw__sbm(*arr)*itemsize + sizeof(int)*2) : 0, itemsize * m + sizeof(int)*2);
+   STBIW_ASSERT(p);
+   if (p) {
+      if (!*arr) ((int *) p)[1] = 0;
+      *arr = (void *) ((int *) p + 2);
+      stbiw__sbm(*arr) = m;
+   }
+   return *arr;
+}
+
+static unsigned char *stbiw__zlib_flushf(unsigned char *data, unsigned int *bitbuffer, int *bitcount)
+{
+   while (*bitcount >= 8) {
+      stbiw__sbpush(data, STBIW_UCHAR(*bitbuffer));
+      *bitbuffer >>= 8;
+      *bitcount -= 8;
+   }
+   return data;
+}
+
+static int stbiw__zlib_bitrev(int code, int codebits)
+{
+   int res=0;
+   while (codebits--) {
+      res = (res << 1) | (code & 1);
+      code >>= 1;
+   }
+   return res;
+}
+
+static unsigned int stbiw__zlib_countm(unsigned char *a, unsigned char *b, int limit)
+{
+   int i;
+   for (i=0; i < limit && i < 258; ++i)
+      if (a[i] != b[i]) break;
+   return i;
+}
+
+static unsigned int stbiw__zhash(unsigned char *data)
+{
+   stbiw_uint32 hash = data[0] + (data[1] << 8) + (data[2] << 16);
+   hash ^= hash << 3;
+   hash += hash >> 5;
+   hash ^= hash << 4;
+   hash += hash >> 17;
+   hash ^= hash << 25;
+   hash += hash >> 6;
+   return hash;
+}
+
+#define stbiw__zlib_flush() (out = stbiw__zlib_flushf(out, &bitbuf, &bitcount))
+#define stbiw__zlib_add(code,codebits) \
+      (bitbuf |= (code) << bitcount, bitcount += (codebits), stbiw__zlib_flush())
+#define stbiw__zlib_huffa(b,c)  stbiw__zlib_add(stbiw__zlib_bitrev(b,c),c)
+
+#define stbiw__zlib_huff1(n)  stbiw__zlib_huffa(0x30 + (n), 8)
+#define stbiw__zlib_huff2(n)  stbiw__zlib_huffa(0x190 + (n)-144, 9)
+#define stbiw__zlib_huff3(n)  stbiw__zlib_huffa(0 + (n)-256,7)
+#define stbiw__zlib_huff4(n)  stbiw__zlib_huffa(0xc0 + (n)-280,8)
+#define stbiw__zlib_huff(n)  ((n) <= 143 ? stbiw__zlib_huff1(n) : (n) <= 255 ? stbiw__zlib_huff2(n) : (n) <= 279 ? stbiw__zlib_huff3(n) : stbiw__zlib_huff4(n))
+#define stbiw__zlib_huffb(n) ((n) <= 143 ? stbiw__zlib_huff1(n) : stbiw__zlib_huff2(n))
+
+#define stbiw__ZHASH   16384
+
+#endif 
+
+STBIWDEF unsigned char * stbi_zlib_compress(unsigned char *data, int data_len, int *out_len, int quality)
+{
+#ifdef STBIW_ZLIB_COMPRESS
+   
+   return STBIW_ZLIB_COMPRESS(data, data_len, out_len, quality);
+#else 
+   static unsigned short lengthc[] = { 3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258, 259 };
+   static unsigned char  lengtheb[]= { 0,0,0,0,0,0,0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4,  4,  5,  5,  5,  5,  0 };
+   static unsigned short distc[]   = { 1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577, 32768 };
+   static unsigned char  disteb[]  = { 0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13 };
+   unsigned int bitbuf=0;
+   int i,j, bitcount=0;
+   unsigned char *out = NULL;
+   unsigned char ***hash_table = (unsigned char***) STBIW_MALLOC(stbiw__ZHASH * sizeof(unsigned char**));
+   if (hash_table == NULL)
+      return NULL;
+   if (quality < 5) quality = 5;
+
+   stbiw__sbpush(out, 0x78);   
+   stbiw__sbpush(out, 0x5e);   
+   stbiw__zlib_add(1,1);  
+   stbiw__zlib_add(1,2);  
+
+   for (i=0; i < stbiw__ZHASH; ++i)
+      hash_table[i] = NULL;
+
+   i=0;
+   while (i < data_len-3) {
+      
+      int h = stbiw__zhash(data+i)&(stbiw__ZHASH-1), best=3;
+      unsigned char *bestloc = 0;
+      unsigned char **hlist = hash_table[h];
+      int n = stbiw__sbcount(hlist);
+      for (j=0; j < n; ++j) {
+         if (hlist[j]-data > i-32768) { 
+            int d = stbiw__zlib_countm(hlist[j], data+i, data_len-i);
+            if (d >= best) { best=d; bestloc=hlist[j]; }
+         }
+      }
+      
+      if (hash_table[h] && stbiw__sbn(hash_table[h]) == 2*quality) {
+         STBIW_MEMMOVE(hash_table[h], hash_table[h]+quality, sizeof(hash_table[h][0])*quality);
+         stbiw__sbn(hash_table[h]) = quality;
+      }
+      stbiw__sbpush(hash_table[h],data+i);
+
+      if (bestloc) {
+         
+         h = stbiw__zhash(data+i+1)&(stbiw__ZHASH-1);
+         hlist = hash_table[h];
+         n = stbiw__sbcount(hlist);
+         for (j=0; j < n; ++j) {
+            if (hlist[j]-data > i-32767) {
+               int e = stbiw__zlib_countm(hlist[j], data+i+1, data_len-i-1);
+               if (e > best) { 
+                  bestloc = NULL;
+                  break;
+               }
+            }
+         }
+      }
+
+      if (bestloc) {
+         int d = (int) (data+i - bestloc); 
+         STBIW_ASSERT(d <= 32767 && best <= 258);
+         for (j=0; best > lengthc[j+1]-1; ++j);
+         stbiw__zlib_huff(j+257);
+         if (lengtheb[j]) stbiw__zlib_add(best - lengthc[j], lengtheb[j]);
+         for (j=0; d > distc[j+1]-1; ++j);
+         stbiw__zlib_add(stbiw__zlib_bitrev(j,5),5);
+         if (disteb[j]) stbiw__zlib_add(d - distc[j], disteb[j]);
+         i += best;
+      } else {
+         stbiw__zlib_huffb(data[i]);
+         ++i;
+      }
+   }
+   
+   for (;i < data_len; ++i)
+      stbiw__zlib_huffb(data[i]);
+   stbiw__zlib_huff(256); 
+   
+   while (bitcount)
+      stbiw__zlib_add(0,1);
+
+   for (i=0; i < stbiw__ZHASH; ++i)
+      (void) stbiw__sbfree(hash_table[i]);
+   STBIW_FREE(hash_table);
+
+   
+   if (stbiw__sbn(out) > data_len + 2 + ((data_len+32766)/32767)*5) {
+      stbiw__sbn(out) = 2;  
+      for (j = 0; j < data_len;) {
+         int blocklen = data_len - j;
+         if (blocklen > 32767) blocklen = 32767;
+         stbiw__sbpush(out, data_len - j == blocklen); 
+         stbiw__sbpush(out, STBIW_UCHAR(blocklen)); 
+         stbiw__sbpush(out, STBIW_UCHAR(blocklen >> 8));
+         stbiw__sbpush(out, STBIW_UCHAR(~blocklen)); 
+         stbiw__sbpush(out, STBIW_UCHAR(~blocklen >> 8));
+         memcpy(out+stbiw__sbn(out), data+j, blocklen);
+         stbiw__sbn(out) += blocklen;
+         j += blocklen;
+      }
+   }
+
+   {
+      
+      unsigned int s1=1, s2=0;
+      int blocklen = (int) (data_len % 5552);
+      j=0;
+      while (j < data_len) {
+         for (i=0; i < blocklen; ++i) { s1 += data[j+i]; s2 += s1; }
+         s1 %= 65521; s2 %= 65521;
+         j += blocklen;
+         blocklen = 5552;
+      }
+      stbiw__sbpush(out, STBIW_UCHAR(s2 >> 8));
+      stbiw__sbpush(out, STBIW_UCHAR(s2));
+      stbiw__sbpush(out, STBIW_UCHAR(s1 >> 8));
+      stbiw__sbpush(out, STBIW_UCHAR(s1));
+   }
+   *out_len = stbiw__sbn(out);
+   
+   STBIW_MEMMOVE(stbiw__sbraw(out), out, *out_len);
+   return (unsigned char *) stbiw__sbraw(out);
+#endif 
+}
+
+static unsigned int stbiw__crc32(unsigned char *buffer, int len)
+{
+#ifdef STBIW_CRC32
+    return STBIW_CRC32(buffer, len);
+#else
+   static unsigned int crc_table[256] =
+   {
+      0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
+      0x0eDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988, 0x09B64C2B, 0x7EB17CBD, 0xE7B82D07, 0x90BF1D91,
+      0x1DB71064, 0x6AB020F2, 0xF3B97148, 0x84BE41DE, 0x1ADAD47D, 0x6DDDE4EB, 0xF4D4B551, 0x83D385C7,
+      0x136C9856, 0x646BA8C0, 0xFD62F97A, 0x8A65C9EC, 0x14015C4F, 0x63066CD9, 0xFA0F3D63, 0x8D080DF5,
+      0x3B6E20C8, 0x4C69105E, 0xD56041E4, 0xA2677172, 0x3C03E4D1, 0x4B04D447, 0xD20D85FD, 0xA50AB56B,
+      0x35B5A8FA, 0x42B2986C, 0xDBBBC9D6, 0xACBCF940, 0x32D86CE3, 0x45DF5C75, 0xDCD60DCF, 0xABD13D59,
+      0x26D930AC, 0x51DE003A, 0xC8D75180, 0xBFD06116, 0x21B4F4B5, 0x56B3C423, 0xCFBA9599, 0xB8BDA50F,
+      0x2802B89E, 0x5F058808, 0xC60CD9B2, 0xB10BE924, 0x2F6F7C87, 0x58684C11, 0xC1611DAB, 0xB6662D3D,
+      0x76DC4190, 0x01DB7106, 0x98D220BC, 0xEFD5102A, 0x71B18589, 0x06B6B51F, 0x9FBFE4A5, 0xE8B8D433,
+      0x7807C9A2, 0x0F00F934, 0x9609A88E, 0xE10E9818, 0x7F6A0DBB, 0x086D3D2D, 0x91646C97, 0xE6635C01,
+      0x6B6B51F4, 0x1C6C6162, 0x856530D8, 0xF262004E, 0x6C0695ED, 0x1B01A57B, 0x8208F4C1, 0xF50FC457,
+      0x65B0D9C6, 0x12B7E950, 0x8BBEB8EA, 0xFCB9887C, 0x62DD1DDF, 0x15DA2D49, 0x8CD37CF3, 0xFBD44C65,
+      0x4DB26158, 0x3AB551CE, 0xA3BC0074, 0xD4BB30E2, 0x4ADFA541, 0x3DD895D7, 0xA4D1C46D, 0xD3D6F4FB,
+      0x4369E96A, 0x346ED9FC, 0xAD678846, 0xDA60B8D0, 0x44042D73, 0x33031DE5, 0xAA0A4C5F, 0xDD0D7CC9,
+      0x5005713C, 0x270241AA, 0xBE0B1010, 0xC90C2086, 0x5768B525, 0x206F85B3, 0xB966D409, 0xCE61E49F,
+      0x5EDEF90E, 0x29D9C998, 0xB0D09822, 0xC7D7A8B4, 0x59B33D17, 0x2EB40D81, 0xB7BD5C3B, 0xC0BA6CAD,
+      0xEDB88320, 0x9ABFB3B6, 0x03B6E20C, 0x74B1D29A, 0xEAD54739, 0x9DD277AF, 0x04DB2615, 0x73DC1683,
+      0xE3630B12, 0x94643B84, 0x0D6D6A3E, 0x7A6A5AA8, 0xE40ECF0B, 0x9309FF9D, 0x0A00AE27, 0x7D079EB1,
+      0xF00F9344, 0x8708A3D2, 0x1E01F268, 0x6906C2FE, 0xF762575D, 0x806567CB, 0x196C3671, 0x6E6B06E7,
+      0xFED41B76, 0x89D32BE0, 0x10DA7A5A, 0x67DD4ACC, 0xF9B9DF6F, 0x8EBEEFF9, 0x17B7BE43, 0x60B08ED5,
+      0xD6D6A3E8, 0xA1D1937E, 0x38D8C2C4, 0x4FDFF252, 0xD1BB67F1, 0xA6BC5767, 0x3FB506DD, 0x48B2364B,
+      0xD80D2BDA, 0xAF0A1B4C, 0x36034AF6, 0x41047A60, 0xDF60EFC3, 0xA867DF55, 0x316E8EEF, 0x4669BE79,
+      0xCB61B38C, 0xBC66831A, 0x256FD2A0, 0x5268E236, 0xCC0C7795, 0xBB0B4703, 0x220216B9, 0x5505262F,
+      0xC5BA3BBE, 0xB2BD0B28, 0x2BB45A92, 0x5CB36A04, 0xC2D7FFA7, 0xB5D0CF31, 0x2CD99E8B, 0x5BDEAE1D,
+      0x9B64C2B0, 0xEC63F226, 0x756AA39C, 0x026D930A, 0x9C0906A9, 0xEB0E363F, 0x72076785, 0x05005713,
+      0x95BF4A82, 0xE2B87A14, 0x7BB12BAE, 0x0CB61B38, 0x92D28E9B, 0xE5D5BE0D, 0x7CDCEFB7, 0x0BDBDF21,
+      0x86D3D2D4, 0xF1D4E242, 0x68DDB3F8, 0x1FDA836E, 0x81BE16CD, 0xF6B9265B, 0x6FB077E1, 0x18B74777,
+      0x88085AE6, 0xFF0F6A70, 0x66063BCA, 0x11010B5C, 0x8F659EFF, 0xF862AE69, 0x616BFFD3, 0x166CCF45,
+      0xA00AE278, 0xD70DD2EE, 0x4E048354, 0x3903B3C2, 0xA7672661, 0xD06016F7, 0x4969474D, 0x3E6E77DB,
+      0xAED16A4A, 0xD9D65ADC, 0x40DF0B66, 0x37D83BF0, 0xA9BCAE53, 0xDEBB9EC5, 0x47B2CF7F, 0x30B5FFE9,
+      0xBDBDF21C, 0xCABAC28A, 0x53B39330, 0x24B4A3A6, 0xBAD03605, 0xCDD70693, 0x54DE5729, 0x23D967BF,
+      0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94, 0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D
+   };
+
+   unsigned int crc = ~0u;
+   int i;
+   for (i=0; i < len; ++i)
+      crc = (crc >> 8) ^ crc_table[buffer[i] ^ (crc & 0xff)];
+   return ~crc;
+#endif
+}
+
+#define stbiw__wpng4(o,a,b,c,d) ((o)[0]=STBIW_UCHAR(a),(o)[1]=STBIW_UCHAR(b),(o)[2]=STBIW_UCHAR(c),(o)[3]=STBIW_UCHAR(d),(o)+=4)
+#define stbiw__wp32(data,v) stbiw__wpng4(data, (v)>>24,(v)>>16,(v)>>8,(v));
+#define stbiw__wptag(data,s) stbiw__wpng4(data, s[0],s[1],s[2],s[3])
+
+static void stbiw__wpcrc(unsigned char **data, int len)
+{
+   unsigned int crc = stbiw__crc32(*data - len - 4, len+4);
+   stbiw__wp32(*data, crc);
+}
+
+static unsigned char stbiw__paeth(int a, int b, int c)
+{
+   int p = a + b - c, pa = abs(p-a), pb = abs(p-b), pc = abs(p-c);
+   if (pa <= pb && pa <= pc) return STBIW_UCHAR(a);
+   if (pb <= pc) return STBIW_UCHAR(b);
+   return STBIW_UCHAR(c);
+}
+
+
+static void stbiw__encode_png_line(unsigned char *pixels, int stride_bytes, int width, int height, int y, int n, int filter_type, signed char *line_buffer)
+{
+   static int mapping[] = { 0,1,2,3,4 };
+   static int firstmap[] = { 0,1,0,5,6 };
+   int *mymap = (y != 0) ? mapping : firstmap;
+   int i;
+   int type = mymap[filter_type];
+   unsigned char *z = pixels + stride_bytes * (stbi__flip_vertically_on_write ? height-1-y : y);
+   int signed_stride = stbi__flip_vertically_on_write ? -stride_bytes : stride_bytes;
+
+   if (type==0) {
+      memcpy(line_buffer, z, width*n);
+      return;
+   }
+
+   
+   for (i = 0; i < n; ++i) {
+      switch (type) {
+         case 1: line_buffer[i] = z[i]; break;
+         case 2: line_buffer[i] = z[i] - z[i-signed_stride]; break;
+         case 3: line_buffer[i] = z[i] - (z[i-signed_stride]>>1); break;
+         case 4: line_buffer[i] = (signed char) (z[i] - stbiw__paeth(0,z[i-signed_stride],0)); break;
+         case 5: line_buffer[i] = z[i]; break;
+         case 6: line_buffer[i] = z[i]; break;
+      }
+   }
+   switch (type) {
+      case 1: for (i=n; i < width*n; ++i) line_buffer[i] = z[i] - z[i-n]; break;
+      case 2: for (i=n; i < width*n; ++i) line_buffer[i] = z[i] - z[i-signed_stride]; break;
+      case 3: for (i=n; i < width*n; ++i) line_buffer[i] = z[i] - ((z[i-n] + z[i-signed_stride])>>1); break;
+      case 4: for (i=n; i < width*n; ++i) line_buffer[i] = z[i] - stbiw__paeth(z[i-n], z[i-signed_stride], z[i-signed_stride-n]); break;
+      case 5: for (i=n; i < width*n; ++i) line_buffer[i] = z[i] - (z[i-n]>>1); break;
+      case 6: for (i=n; i < width*n; ++i) line_buffer[i] = z[i] - stbiw__paeth(z[i-n], 0,0); break;
+   }
+}
+
+STBIWDEF unsigned char *stbi_write_png_to_mem(const unsigned char *pixels, int stride_bytes, int x, int y, int n, int *out_len)
+{
+   int force_filter = stbi_write_force_png_filter;
+   int ctype[5] = { -1, 0, 4, 2, 6 };
+   unsigned char sig[8] = { 137,80,78,71,13,10,26,10 };
+   unsigned char *out,*o, *filt, *zlib;
+   signed char *line_buffer;
+   int j,zlen;
+
+   if (stride_bytes == 0)
+      stride_bytes = x * n;
+
+   if (force_filter >= 5) {
+      force_filter = -1;
+   }
+
+   filt = (unsigned char *) STBIW_MALLOC((x*n+1) * y); if (!filt) return 0;
+   line_buffer = (signed char *) STBIW_MALLOC(x * n); if (!line_buffer) { STBIW_FREE(filt); return 0; }
+   for (j=0; j < y; ++j) {
+      int filter_type;
+      if (force_filter > -1) {
+         filter_type = force_filter;
+         stbiw__encode_png_line((unsigned char*)(pixels), stride_bytes, x, y, j, n, force_filter, line_buffer);
+      } else { 
+         int best_filter = 0, best_filter_val = 0x7fffffff, est, i;
+         for (filter_type = 0; filter_type < 5; filter_type++) {
+            stbiw__encode_png_line((unsigned char*)(pixels), stride_bytes, x, y, j, n, filter_type, line_buffer);
+
+            
+            est = 0;
+            for (i = 0; i < x*n; ++i) {
+               est += abs((signed char) line_buffer[i]);
+            }
+            if (est < best_filter_val) {
+               best_filter_val = est;
+               best_filter = filter_type;
+            }
+         }
+         if (filter_type != best_filter) {  
+            stbiw__encode_png_line((unsigned char*)(pixels), stride_bytes, x, y, j, n, best_filter, line_buffer);
+            filter_type = best_filter;
+         }
+      }
+      
+      filt[j*(x*n+1)] = (unsigned char) filter_type;
+      STBIW_MEMMOVE(filt+j*(x*n+1)+1, line_buffer, x*n);
+   }
+   STBIW_FREE(line_buffer);
+   zlib = stbi_zlib_compress(filt, y*( x*n+1), &zlen, stbi_write_png_compression_level);
+   STBIW_FREE(filt);
+   if (!zlib) return 0;
+
+   
+   out = (unsigned char *) STBIW_MALLOC(8 + 12+13 + 12+zlen + 12);
+   if (!out) return 0;
+   *out_len = 8 + 12+13 + 12+zlen + 12;
+
+   o=out;
+   STBIW_MEMMOVE(o,sig,8); o+= 8;
+   stbiw__wp32(o, 13); 
+   stbiw__wptag(o, "IHDR");
+   stbiw__wp32(o, x);
+   stbiw__wp32(o, y);
+   *o++ = 8;
+   *o++ = STBIW_UCHAR(ctype[n]);
+   *o++ = 0;
+   *o++ = 0;
+   *o++ = 0;
+   stbiw__wpcrc(&o,13);
+
+   stbiw__wp32(o, zlen);
+   stbiw__wptag(o, "IDAT");
+   STBIW_MEMMOVE(o, zlib, zlen);
+   o += zlen;
+   STBIW_FREE(zlib);
+   stbiw__wpcrc(&o, zlen);
+
+   stbiw__wp32(o,0);
+   stbiw__wptag(o, "IEND");
+   stbiw__wpcrc(&o,0);
+
+   STBIW_ASSERT(o == out + *out_len);
+
+   return out;
+}
+
+#ifndef STBI_WRITE_NO_STDIO
+STBIWDEF int stbi_write_png(char const *filename, int x, int y, int comp, const void *data, int stride_bytes)
+{
+   FILE *f;
+   int len;
+   unsigned char *png = stbi_write_png_to_mem((const unsigned char *) data, stride_bytes, x, y, comp, &len);
+   if (png == NULL) return 0;
+
+   f = stbiw__fopen(filename, "wb");
+   if (!f) { STBIW_FREE(png); return 0; }
+   fwrite(png, 1, len, f);
+   fclose(f);
+   STBIW_FREE(png);
+   return 1;
+}
+#endif
+
+STBIWDEF int stbi_write_png_to_func(stbi_write_func *func, void *context, int x, int y, int comp, const void *data, int stride_bytes)
+{
+   int len;
+   unsigned char *png = stbi_write_png_to_mem((const unsigned char *) data, stride_bytes, x, y, comp, &len);
+   if (png == NULL) return 0;
+   func(context, png, len);
+   STBIW_FREE(png);
+   return 1;
+}
+
+
+
+
+static const unsigned char stbiw__jpg_ZigZag[] = { 0,1,5,6,14,15,27,28,2,4,7,13,16,26,29,42,3,8,12,17,25,30,41,43,9,11,18,
+      24,31,40,44,53,10,19,23,32,39,45,52,54,20,22,33,38,46,51,55,60,21,34,37,47,50,56,59,61,35,36,48,49,57,58,62,63 };
+
+static void stbiw__jpg_writeBits(stbi__write_context *s, int *bitBufP, int *bitCntP, const unsigned short *bs) {
+   int bitBuf = *bitBufP, bitCnt = *bitCntP;
+   bitCnt += bs[1];
+   bitBuf |= bs[0] << (24 - bitCnt);
+   while(bitCnt >= 8) {
+      unsigned char c = (bitBuf >> 16) & 255;
+      stbiw__putc(s, c);
+      if(c == 255) {
+         stbiw__putc(s, 0);
+      }
+      bitBuf <<= 8;
+      bitCnt -= 8;
+   }
+   *bitBufP = bitBuf;
+   *bitCntP = bitCnt;
+}
+
+static void stbiw__jpg_DCT(float *d0p, float *d1p, float *d2p, float *d3p, float *d4p, float *d5p, float *d6p, float *d7p) {
+   float d0 = *d0p, d1 = *d1p, d2 = *d2p, d3 = *d3p, d4 = *d4p, d5 = *d5p, d6 = *d6p, d7 = *d7p;
+   float z1, z2, z3, z4, z5, z11, z13;
+
+   float tmp0 = d0 + d7;
+   float tmp7 = d0 - d7;
+   float tmp1 = d1 + d6;
+   float tmp6 = d1 - d6;
+   float tmp2 = d2 + d5;
+   float tmp5 = d2 - d5;
+   float tmp3 = d3 + d4;
+   float tmp4 = d3 - d4;
+
+   
+   float tmp10 = tmp0 + tmp3;   
+   float tmp13 = tmp0 - tmp3;
+   float tmp11 = tmp1 + tmp2;
+   float tmp12 = tmp1 - tmp2;
+
+   d0 = tmp10 + tmp11;       
+   d4 = tmp10 - tmp11;
+
+   z1 = (tmp12 + tmp13) * 0.707106781f; 
+   d2 = tmp13 + z1;       
+   d6 = tmp13 - z1;
+
+   
+   tmp10 = tmp4 + tmp5;       
+   tmp11 = tmp5 + tmp6;
+   tmp12 = tmp6 + tmp7;
+
+   
+   z5 = (tmp10 - tmp12) * 0.382683433f; 
+   z2 = tmp10 * 0.541196100f + z5; 
+   z4 = tmp12 * 1.306562965f + z5; 
+   z3 = tmp11 * 0.707106781f; 
+
+   z11 = tmp7 + z3;      
+   z13 = tmp7 - z3;
+
+   *d5p = z13 + z2;         
+   *d3p = z13 - z2;
+   *d1p = z11 + z4;
+   *d7p = z11 - z4;
+
+   *d0p = d0;  *d2p = d2;  *d4p = d4;  *d6p = d6;
+}
+
+static void stbiw__jpg_calcBits(int val, unsigned short bits[2]) {
+   int tmp1 = val < 0 ? -val : val;
+   val = val < 0 ? val-1 : val;
+   bits[1] = 1;
+   while(tmp1 >>= 1) {
+      ++bits[1];
+   }
+   bits[0] = val & ((1<<bits[1])-1);
+}
+
+static int stbiw__jpg_processDU(stbi__write_context *s, int *bitBuf, int *bitCnt, float *CDU, int du_stride, float *fdtbl, int DC, const unsigned short HTDC[256][2], const unsigned short HTAC[256][2]) {
+   const unsigned short EOB[2] = { HTAC[0x00][0], HTAC[0x00][1] };
+   const unsigned short M16zeroes[2] = { HTAC[0xF0][0], HTAC[0xF0][1] };
+   int dataOff, i, j, n, diff, end0pos, x, y;
+   int DU[64];
+
+   
+   for(dataOff=0, n=du_stride*8; dataOff<n; dataOff+=du_stride) {
+      stbiw__jpg_DCT(&CDU[dataOff], &CDU[dataOff+1], &CDU[dataOff+2], &CDU[dataOff+3], &CDU[dataOff+4], &CDU[dataOff+5], &CDU[dataOff+6], &CDU[dataOff+7]);
+   }
+   
+   for(dataOff=0; dataOff<8; ++dataOff) {
+      stbiw__jpg_DCT(&CDU[dataOff], &CDU[dataOff+du_stride], &CDU[dataOff+du_stride*2], &CDU[dataOff+du_stride*3], &CDU[dataOff+du_stride*4],
+                     &CDU[dataOff+du_stride*5], &CDU[dataOff+du_stride*6], &CDU[dataOff+du_stride*7]);
+   }
+   
+   for(y = 0, j=0; y < 8; ++y) {
+      for(x = 0; x < 8; ++x,++j) {
+         float v;
+         i = y*du_stride+x;
+         v = CDU[i]*fdtbl[j];
+         
+         
+         DU[stbiw__jpg_ZigZag[j]] = (int)(v < 0 ? v - 0.5f : v + 0.5f);
+      }
+   }
+
+   
+   diff = DU[0] - DC;
+   if (diff == 0) {
+      stbiw__jpg_writeBits(s, bitBuf, bitCnt, HTDC[0]);
+   } else {
+      unsigned short bits[2];
+      stbiw__jpg_calcBits(diff, bits);
+      stbiw__jpg_writeBits(s, bitBuf, bitCnt, HTDC[bits[1]]);
+      stbiw__jpg_writeBits(s, bitBuf, bitCnt, bits);
+   }
+   
+   end0pos = 63;
+   for(; (end0pos>0)&&(DU[end0pos]==0); --end0pos) {
+   }
+   
+   if(end0pos == 0) {
+      stbiw__jpg_writeBits(s, bitBuf, bitCnt, EOB);
+      return DU[0];
+   }
+   for(i = 1; i <= end0pos; ++i) {
+      int startpos = i;
+      int nrzeroes;
+      unsigned short bits[2];
+      for (; DU[i]==0 && i<=end0pos; ++i) {
+      }
+      nrzeroes = i-startpos;
+      if ( nrzeroes >= 16 ) {
+         int lng = nrzeroes>>4;
+         int nrmarker;
+         for (nrmarker=1; nrmarker <= lng; ++nrmarker)
+            stbiw__jpg_writeBits(s, bitBuf, bitCnt, M16zeroes);
+         nrzeroes &= 15;
+      }
+      stbiw__jpg_calcBits(DU[i], bits);
+      stbiw__jpg_writeBits(s, bitBuf, bitCnt, HTAC[(nrzeroes<<4)+bits[1]]);
+      stbiw__jpg_writeBits(s, bitBuf, bitCnt, bits);
+   }
+   if(end0pos != 63) {
+      stbiw__jpg_writeBits(s, bitBuf, bitCnt, EOB);
+   }
+   return DU[0];
+}
+
+static int stbi_write_jpg_core(stbi__write_context *s, int width, int height, int comp, const void* data, int quality) {
+   
+   static const unsigned char std_dc_luminance_nrcodes[] = {0,0,1,5,1,1,1,1,1,1,0,0,0,0,0,0,0};
+   static const unsigned char std_dc_luminance_values[] = {0,1,2,3,4,5,6,7,8,9,10,11};
+   static const unsigned char std_ac_luminance_nrcodes[] = {0,0,2,1,3,3,2,4,3,5,5,4,4,0,0,1,0x7d};
+   static const unsigned char std_ac_luminance_values[] = {
+      0x01,0x02,0x03,0x00,0x04,0x11,0x05,0x12,0x21,0x31,0x41,0x06,0x13,0x51,0x61,0x07,0x22,0x71,0x14,0x32,0x81,0x91,0xa1,0x08,
+      0x23,0x42,0xb1,0xc1,0x15,0x52,0xd1,0xf0,0x24,0x33,0x62,0x72,0x82,0x09,0x0a,0x16,0x17,0x18,0x19,0x1a,0x25,0x26,0x27,0x28,
+      0x29,0x2a,0x34,0x35,0x36,0x37,0x38,0x39,0x3a,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4a,0x53,0x54,0x55,0x56,0x57,0x58,0x59,
+      0x5a,0x63,0x64,0x65,0x66,0x67,0x68,0x69,0x6a,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7a,0x83,0x84,0x85,0x86,0x87,0x88,0x89,
+      0x8a,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99,0x9a,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,0xa8,0xa9,0xaa,0xb2,0xb3,0xb4,0xb5,0xb6,
+      0xb7,0xb8,0xb9,0xba,0xc2,0xc3,0xc4,0xc5,0xc6,0xc7,0xc8,0xc9,0xca,0xd2,0xd3,0xd4,0xd5,0xd6,0xd7,0xd8,0xd9,0xda,0xe1,0xe2,
+      0xe3,0xe4,0xe5,0xe6,0xe7,0xe8,0xe9,0xea,0xf1,0xf2,0xf3,0xf4,0xf5,0xf6,0xf7,0xf8,0xf9,0xfa
+   };
+   static const unsigned char std_dc_chrominance_nrcodes[] = {0,0,3,1,1,1,1,1,1,1,1,1,0,0,0,0,0};
+   static const unsigned char std_dc_chrominance_values[] = {0,1,2,3,4,5,6,7,8,9,10,11};
+   static const unsigned char std_ac_chrominance_nrcodes[] = {0,0,2,1,2,4,4,3,4,7,5,4,4,0,1,2,0x77};
+   static const unsigned char std_ac_chrominance_values[] = {
+      0x00,0x01,0x02,0x03,0x11,0x04,0x05,0x21,0x31,0x06,0x12,0x41,0x51,0x07,0x61,0x71,0x13,0x22,0x32,0x81,0x08,0x14,0x42,0x91,
+      0xa1,0xb1,0xc1,0x09,0x23,0x33,0x52,0xf0,0x15,0x62,0x72,0xd1,0x0a,0x16,0x24,0x34,0xe1,0x25,0xf1,0x17,0x18,0x19,0x1a,0x26,
+      0x27,0x28,0x29,0x2a,0x35,0x36,0x37,0x38,0x39,0x3a,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4a,0x53,0x54,0x55,0x56,0x57,0x58,
+      0x59,0x5a,0x63,0x64,0x65,0x66,0x67,0x68,0x69,0x6a,0x73,0x74,0x75,0x76,0x77,0x78,0x79,0x7a,0x82,0x83,0x84,0x85,0x86,0x87,
+      0x88,0x89,0x8a,0x92,0x93,0x94,0x95,0x96,0x97,0x98,0x99,0x9a,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,0xa8,0xa9,0xaa,0xb2,0xb3,0xb4,
+      0xb5,0xb6,0xb7,0xb8,0xb9,0xba,0xc2,0xc3,0xc4,0xc5,0xc6,0xc7,0xc8,0xc9,0xca,0xd2,0xd3,0xd4,0xd5,0xd6,0xd7,0xd8,0xd9,0xda,
+      0xe2,0xe3,0xe4,0xe5,0xe6,0xe7,0xe8,0xe9,0xea,0xf2,0xf3,0xf4,0xf5,0xf6,0xf7,0xf8,0xf9,0xfa
+   };
+   
+   static const unsigned short YDC_HT[256][2] = { {0,2},{2,3},{3,3},{4,3},{5,3},{6,3},{14,4},{30,5},{62,6},{126,7},{254,8},{510,9}};
+   static const unsigned short UVDC_HT[256][2] = { {0,2},{1,2},{2,2},{6,3},{14,4},{30,5},{62,6},{126,7},{254,8},{510,9},{1022,10},{2046,11}};
+   static const unsigned short YAC_HT[256][2] = {
+      {10,4},{0,2},{1,2},{4,3},{11,4},{26,5},{120,7},{248,8},{1014,10},{65410,16},{65411,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {12,4},{27,5},{121,7},{502,9},{2038,11},{65412,16},{65413,16},{65414,16},{65415,16},{65416,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {28,5},{249,8},{1015,10},{4084,12},{65417,16},{65418,16},{65419,16},{65420,16},{65421,16},{65422,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {58,6},{503,9},{4085,12},{65423,16},{65424,16},{65425,16},{65426,16},{65427,16},{65428,16},{65429,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {59,6},{1016,10},{65430,16},{65431,16},{65432,16},{65433,16},{65434,16},{65435,16},{65436,16},{65437,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {122,7},{2039,11},{65438,16},{65439,16},{65440,16},{65441,16},{65442,16},{65443,16},{65444,16},{65445,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {123,7},{4086,12},{65446,16},{65447,16},{65448,16},{65449,16},{65450,16},{65451,16},{65452,16},{65453,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {250,8},{4087,12},{65454,16},{65455,16},{65456,16},{65457,16},{65458,16},{65459,16},{65460,16},{65461,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {504,9},{32704,15},{65462,16},{65463,16},{65464,16},{65465,16},{65466,16},{65467,16},{65468,16},{65469,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {505,9},{65470,16},{65471,16},{65472,16},{65473,16},{65474,16},{65475,16},{65476,16},{65477,16},{65478,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {506,9},{65479,16},{65480,16},{65481,16},{65482,16},{65483,16},{65484,16},{65485,16},{65486,16},{65487,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {1017,10},{65488,16},{65489,16},{65490,16},{65491,16},{65492,16},{65493,16},{65494,16},{65495,16},{65496,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {1018,10},{65497,16},{65498,16},{65499,16},{65500,16},{65501,16},{65502,16},{65503,16},{65504,16},{65505,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {2040,11},{65506,16},{65507,16},{65508,16},{65509,16},{65510,16},{65511,16},{65512,16},{65513,16},{65514,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {65515,16},{65516,16},{65517,16},{65518,16},{65519,16},{65520,16},{65521,16},{65522,16},{65523,16},{65524,16},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {2041,11},{65525,16},{65526,16},{65527,16},{65528,16},{65529,16},{65530,16},{65531,16},{65532,16},{65533,16},{65534,16},{0,0},{0,0},{0,0},{0,0},{0,0}
+   };
+   static const unsigned short UVAC_HT[256][2] = {
+      {0,2},{1,2},{4,3},{10,4},{24,5},{25,5},{56,6},{120,7},{500,9},{1014,10},{4084,12},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {11,4},{57,6},{246,8},{501,9},{2038,11},{4085,12},{65416,16},{65417,16},{65418,16},{65419,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {26,5},{247,8},{1015,10},{4086,12},{32706,15},{65420,16},{65421,16},{65422,16},{65423,16},{65424,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {27,5},{248,8},{1016,10},{4087,12},{65425,16},{65426,16},{65427,16},{65428,16},{65429,16},{65430,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {58,6},{502,9},{65431,16},{65432,16},{65433,16},{65434,16},{65435,16},{65436,16},{65437,16},{65438,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {59,6},{1017,10},{65439,16},{65440,16},{65441,16},{65442,16},{65443,16},{65444,16},{65445,16},{65446,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {121,7},{2039,11},{65447,16},{65448,16},{65449,16},{65450,16},{65451,16},{65452,16},{65453,16},{65454,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {122,7},{2040,11},{65455,16},{65456,16},{65457,16},{65458,16},{65459,16},{65460,16},{65461,16},{65462,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {249,8},{65463,16},{65464,16},{65465,16},{65466,16},{65467,16},{65468,16},{65469,16},{65470,16},{65471,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {503,9},{65472,16},{65473,16},{65474,16},{65475,16},{65476,16},{65477,16},{65478,16},{65479,16},{65480,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {504,9},{65481,16},{65482,16},{65483,16},{65484,16},{65485,16},{65486,16},{65487,16},{65488,16},{65489,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {505,9},{65490,16},{65491,16},{65492,16},{65493,16},{65494,16},{65495,16},{65496,16},{65497,16},{65498,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {506,9},{65499,16},{65500,16},{65501,16},{65502,16},{65503,16},{65504,16},{65505,16},{65506,16},{65507,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {2041,11},{65508,16},{65509,16},{65510,16},{65511,16},{65512,16},{65513,16},{65514,16},{65515,16},{65516,16},{0,0},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {16352,14},{65517,16},{65518,16},{65519,16},{65520,16},{65521,16},{65522,16},{65523,16},{65524,16},{65525,16},{0,0},{0,0},{0,0},{0,0},{0,0},
+      {1018,10},{32707,15},{65526,16},{65527,16},{65528,16},{65529,16},{65530,16},{65531,16},{65532,16},{65533,16},{65534,16},{0,0},{0,0},{0,0},{0,0},{0,0}
+   };
+   static const int YQT[] = {16,11,10,16,24,40,51,61,12,12,14,19,26,58,60,55,14,13,16,24,40,57,69,56,14,17,22,29,51,87,80,62,18,22,
+                             37,56,68,109,103,77,24,35,55,64,81,104,113,92,49,64,78,87,103,121,120,101,72,92,95,98,112,100,103,99};
+   static const int UVQT[] = {17,18,24,47,99,99,99,99,18,21,26,66,99,99,99,99,24,26,56,99,99,99,99,99,47,66,99,99,99,99,99,99,
+                              99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99,99};
+   static const float aasf[] = { 1.0f * 2.828427125f, 1.387039845f * 2.828427125f, 1.306562965f * 2.828427125f, 1.175875602f * 2.828427125f,
+                                 1.0f * 2.828427125f, 0.785694958f * 2.828427125f, 0.541196100f * 2.828427125f, 0.275899379f * 2.828427125f };
+
+   int row, col, i, k, subsample;
+   float fdtbl_Y[64], fdtbl_UV[64];
+   unsigned char YTable[64], UVTable[64];
+
+   if(!data || !width || !height || comp > 4 || comp < 1) {
+      return 0;
+   }
+
+   quality = quality ? quality : 90;
+   subsample = quality <= 90 ? 1 : 0;
+   quality = quality < 1 ? 1 : quality > 100 ? 100 : quality;
+   quality = quality < 50 ? 5000 / quality : 200 - quality * 2;
+
+   for(i = 0; i < 64; ++i) {
+      int uvti, yti = (YQT[i]*quality+50)/100;
+      YTable[stbiw__jpg_ZigZag[i]] = (unsigned char) (yti < 1 ? 1 : yti > 255 ? 255 : yti);
+      uvti = (UVQT[i]*quality+50)/100;
+      UVTable[stbiw__jpg_ZigZag[i]] = (unsigned char) (uvti < 1 ? 1 : uvti > 255 ? 255 : uvti);
+   }
+
+   for(row = 0, k = 0; row < 8; ++row) {
+      for(col = 0; col < 8; ++col, ++k) {
+         fdtbl_Y[k]  = 1 / (YTable [stbiw__jpg_ZigZag[k]] * aasf[row] * aasf[col]);
+         fdtbl_UV[k] = 1 / (UVTable[stbiw__jpg_ZigZag[k]] * aasf[row] * aasf[col]);
+      }
+   }
+
+   
+   {
+      static const unsigned char head0[] = { 0xFF,0xD8,0xFF,0xE0,0,0x10,'J','F','I','F',0,1,1,0,0,1,0,1,0,0,0xFF,0xDB,0,0x84,0 };
+      static const unsigned char head2[] = { 0xFF,0xDA,0,0xC,3,1,0,2,0x11,3,0x11,0,0x3F,0 };
+      const unsigned char head1[] = { 0xFF,0xC0,0,0x11,8,(unsigned char)(height>>8),STBIW_UCHAR(height),(unsigned char)(width>>8),STBIW_UCHAR(width),
+                                      3,1,(unsigned char)(subsample?0x22:0x11),0,2,0x11,1,3,0x11,1,0xFF,0xC4,0x01,0xA2,0 };
+      s->func(s->context, (void*)head0, sizeof(head0));
+      s->func(s->context, (void*)YTable, sizeof(YTable));
+      stbiw__putc(s, 1);
+      s->func(s->context, UVTable, sizeof(UVTable));
+      s->func(s->context, (void*)head1, sizeof(head1));
+      s->func(s->context, (void*)(std_dc_luminance_nrcodes+1), sizeof(std_dc_luminance_nrcodes)-1);
+      s->func(s->context, (void*)std_dc_luminance_values, sizeof(std_dc_luminance_values));
+      stbiw__putc(s, 0x10); 
+      s->func(s->context, (void*)(std_ac_luminance_nrcodes+1), sizeof(std_ac_luminance_nrcodes)-1);
+      s->func(s->context, (void*)std_ac_luminance_values, sizeof(std_ac_luminance_values));
+      stbiw__putc(s, 1); 
+      s->func(s->context, (void*)(std_dc_chrominance_nrcodes+1), sizeof(std_dc_chrominance_nrcodes)-1);
+      s->func(s->context, (void*)std_dc_chrominance_values, sizeof(std_dc_chrominance_values));
+      stbiw__putc(s, 0x11); 
+      s->func(s->context, (void*)(std_ac_chrominance_nrcodes+1), sizeof(std_ac_chrominance_nrcodes)-1);
+      s->func(s->context, (void*)std_ac_chrominance_values, sizeof(std_ac_chrominance_values));
+      s->func(s->context, (void*)head2, sizeof(head2));
+   }
+
+   
+   {
+      static const unsigned short fillBits[] = {0x7F, 7};
+      int DCY=0, DCU=0, DCV=0;
+      int bitBuf=0, bitCnt=0;
+      
+      int ofsG = comp > 2 ? 1 : 0, ofsB = comp > 2 ? 2 : 0;
+      const unsigned char *dataR = (const unsigned char *)data;
+      const unsigned char *dataG = dataR + ofsG;
+      const unsigned char *dataB = dataR + ofsB;
+      int x, y, pos;
+      if(subsample) {
+         for(y = 0; y < height; y += 16) {
+            for(x = 0; x < width; x += 16) {
+               float Y[256], U[256], V[256];
+               for(row = y, pos = 0; row < y+16; ++row) {
+                  
+                  int clamped_row = (row < height) ? row : height - 1;
+                  int base_p = (stbi__flip_vertically_on_write ? (height-1-clamped_row) : clamped_row)*width*comp;
+                  for(col = x; col < x+16; ++col, ++pos) {
+                     
+                     int p = base_p + ((col < width) ? col : (width-1))*comp;
+                     float r = dataR[p], g = dataG[p], b = dataB[p];
+                     Y[pos]= +0.29900f*r + 0.58700f*g + 0.11400f*b - 128;
+                     U[pos]= -0.16874f*r - 0.33126f*g + 0.50000f*b;
+                     V[pos]= +0.50000f*r - 0.41869f*g - 0.08131f*b;
+                  }
+               }
+               DCY = stbiw__jpg_processDU(s, &bitBuf, &bitCnt, Y+0,   16, fdtbl_Y, DCY, YDC_HT, YAC_HT);
+               DCY = stbiw__jpg_processDU(s, &bitBuf, &bitCnt, Y+8,   16, fdtbl_Y, DCY, YDC_HT, YAC_HT);
+               DCY = stbiw__jpg_processDU(s, &bitBuf, &bitCnt, Y+128, 16, fdtbl_Y, DCY, YDC_HT, YAC_HT);
+               DCY = stbiw__jpg_processDU(s, &bitBuf, &bitCnt, Y+136, 16, fdtbl_Y, DCY, YDC_HT, YAC_HT);
+
+               
+               {
+                  float subU[64], subV[64];
+                  int yy, xx;
+                  for(yy = 0, pos = 0; yy < 8; ++yy) {
+                     for(xx = 0; xx < 8; ++xx, ++pos) {
+                        int j = yy*32+xx*2;
+                        subU[pos] = (U[j+0] + U[j+1] + U[j+16] + U[j+17]) * 0.25f;
+                        subV[pos] = (V[j+0] + V[j+1] + V[j+16] + V[j+17]) * 0.25f;
+                     }
+                  }
+                  DCU = stbiw__jpg_processDU(s, &bitBuf, &bitCnt, subU, 8, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
+                  DCV = stbiw__jpg_processDU(s, &bitBuf, &bitCnt, subV, 8, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
+               }
+            }
+         }
+      } else {
+         for(y = 0; y < height; y += 8) {
+            for(x = 0; x < width; x += 8) {
+               float Y[64], U[64], V[64];
+               for(row = y, pos = 0; row < y+8; ++row) {
+                  
+                  int clamped_row = (row < height) ? row : height - 1;
+                  int base_p = (stbi__flip_vertically_on_write ? (height-1-clamped_row) : clamped_row)*width*comp;
+                  for(col = x; col < x+8; ++col, ++pos) {
+                     
+                     int p = base_p + ((col < width) ? col : (width-1))*comp;
+                     float r = dataR[p], g = dataG[p], b = dataB[p];
+                     Y[pos]= +0.29900f*r + 0.58700f*g + 0.11400f*b - 128;
+                     U[pos]= -0.16874f*r - 0.33126f*g + 0.50000f*b;
+                     V[pos]= +0.50000f*r - 0.41869f*g - 0.08131f*b;
+                  }
+               }
+
+               DCY = stbiw__jpg_processDU(s, &bitBuf, &bitCnt, Y, 8, fdtbl_Y,  DCY, YDC_HT, YAC_HT);
+               DCU = stbiw__jpg_processDU(s, &bitBuf, &bitCnt, U, 8, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
+               DCV = stbiw__jpg_processDU(s, &bitBuf, &bitCnt, V, 8, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
+            }
+         }
+      }
+
+      
+      stbiw__jpg_writeBits(s, &bitBuf, &bitCnt, fillBits);
+   }
+
+   
+   stbiw__putc(s, 0xFF);
+   stbiw__putc(s, 0xD9);
+
+   return 1;
+}
+
+STBIWDEF int stbi_write_jpg_to_func(stbi_write_func *func, void *context, int x, int y, int comp, const void *data, int quality)
+{
+   stbi__write_context s = { 0 };
+   stbi__start_write_callbacks(&s, func, context);
+   return stbi_write_jpg_core(&s, x, y, comp, (void *) data, quality);
+}
+
+
+#ifndef STBI_WRITE_NO_STDIO
+STBIWDEF int stbi_write_jpg(char const *filename, int x, int y, int comp, const void *data, int quality)
+{
+   stbi__write_context s = { 0 };
+   if (stbi__start_write_file(&s,filename)) {
+      int r = stbi_write_jpg_core(&s, x, y, comp, data, quality);
+      stbi__end_write_file(&s);
+      return r;
+   } else
+      return 0;
+}
+#endif
+
+#endif 
+
+
+
+
+
