@@ -78,7 +78,7 @@ void drawNextButton() {
     glEnd();
     glLineWidth(1.0f);
     
-    drawString("NEXT", -0.12f, -0.05f, 0.18f, 1.0f, 1.0f, 1.0f);
+    drawString("NEXT", (-getStringWidth("NEXT", 0.18f) / 2.0f) + 0.02f, -0.01f, 0.18f, 1.0f, 1.0f, 1.0f);
     glPopMatrix();
 }
 
@@ -129,6 +129,11 @@ void startTimer(int value) {
 
 void startKeyboard(unsigned char key, int x, int y) {
     switch (key) {
+        case 13: // Enter key
+        case 10: // New line
+            transitionToMain = true;
+            glutLeaveMainLoop();
+            break;
         case 'a': animSpeed = 0.0f; break; 
         case 'w': animSpeed = 0.02f; break; 
         case '+': zoomFactor += 0.1f; break; 

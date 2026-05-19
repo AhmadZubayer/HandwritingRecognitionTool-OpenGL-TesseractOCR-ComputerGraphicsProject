@@ -215,18 +215,18 @@ void UIPanel::drawRectOutline(float x,float y,float w,float h,
     glEnd();
 }
 
-float UIPanel::charWidth(float scale){ return (CW+2)*scale; }
+float UIPanel::charWidth(float scale){ return (CW+3)*scale; }
 
 void UIPanel::drawText(const std::string& text, float x, float y,
                        float r, float g, float b, float scale){
-    glLineWidth(1.2f*scale);
+    glLineWidth(1.3f*scale);
     glColor3f(r,g,b);
     float cx = x;
     for(char c : text){
-        if(c=='\n'){ cx=x; y-=(CH+3)*scale; continue; }
+        if(c=='\n'){ cx=x; y-=(CH+4)*scale; continue; }
         glPushMatrix();
         glTranslatef(cx, y, 0);
-        drawBitmapChar(c, cx, y, scale*1.5f);
+        drawBitmapChar(c, cx, y, scale*2.2f);
         glPopMatrix();
         cx += charWidth(scale);
     }
@@ -244,10 +244,10 @@ void UIPanel::drawButton(const UIButton& btn){
     drawRect(btn.x,btn.y,btn.w,btn.h,br,bg,bb,1.0f);
     drawRectOutline(btn.x,btn.y,btn.w,btn.h,0.5f,0.5f,0.6f,0.8f,1.0f);
     // Center text
-    float tw = (float)btn.label.size()*charWidth(0.9f);
+    float tw = (float)btn.label.size()*charWidth(0.95f);
     float tx = btn.x + (btn.w - tw)*0.5f;
     float ty = btn.y + btn.h*0.35f;
-    drawText(btn.label, tx, ty, 0.85f,0.90f,0.95f, 0.9f);
+    drawText(btn.label, tx, ty, 0.85f,0.90f,0.95f, 0.95f);
 }
 
 // ─── Draw a single slider ─────────────────────────────────────────────────────
@@ -267,8 +267,9 @@ void UIPanel::drawSlider(const UISlider& sl){
         lbl += std::to_string((int)(sl.value*100)/100.0f).substr(0,4);
     else
         lbl += (sl.value == sl.minVal ? "Auto" : std::to_string((int)sl.value));
-    drawText(lbl, sl.x, sl.y+18, 0.65f,0.70f,0.75f, 0.75f);
-}
+    drawText(lbl, sl.x, sl.y+22, 0.65f,0.70f,0.75f, 0.85f);
+    }
+
 
 // ─── Feature 18: Processing indicator ────────────────────────────────────────
 void UIPanel::drawProcessingIndicator(int winW, int winH){
@@ -301,16 +302,16 @@ void UIPanel::drawResultPanel(int winW, int winH){
 
     // Header
     drawRect(panelX+2, (float)winH-toolbarH-30, panelW-2, 30, 0.14f,0.14f,0.18f,1.0f);
-    drawText("OCR RESULT", panelX+12, (float)winH-toolbarH-20, 0.4f,0.7f,1.0f, 1.0f);
+    drawText("OCR RESULT", panelX+12, (float)winH-toolbarH-20, 0.4f,0.7f,1.0f, 1.1f);
 
     // Feature 7: word/char count
     if(hasResult){
         std::string info = "W:" + std::to_string(currentResult.wordCount)
                          + " C:" + std::to_string(currentResult.charCount)
                          + " T:" + std::to_string((int)currentResult.processingTimeMs) + "ms";
-        float iw = (float)info.size()*charWidth(0.7f);
+        float iw = (float)info.size()*charWidth(0.75f);
         drawText(info, panelX+panelW-iw-8, (float)winH-toolbarH-20,
-                 0.45f,0.55f,0.65f, 0.7f);
+                 0.45f,0.55f,0.65f, 0.75f);
     }
 
     // Scrollable text area
@@ -323,15 +324,15 @@ void UIPanel::drawResultPanel(int winW, int winH){
     glScissor((int)panelX+2, (int)areaBottom, (int)panelW-4, (int)areaH);
 
     if(!hasResult && !isProcessing){
-        drawText("Draw on canvas,", panelX+16, areaTop-20-scrollOffset,
-                 0.35f,0.35f,0.40f, 0.85f);
-        drawText("then press Ctrl+R", panelX+16, areaTop-38-scrollOffset,
-                 0.35f,0.35f,0.40f, 0.85f);
-        drawText("to recognize.", panelX+16, areaTop-56-scrollOffset,
-                 0.35f,0.35f,0.40f, 0.85f);
+        drawText("Draw on canvas,", panelX+16, areaTop-25-scrollOffset,
+                 0.35f,0.35f,0.40f, 0.95f);
+        drawText("then press Ctrl+R", panelX+16, areaTop-48-scrollOffset,
+                 0.35f,0.35f,0.40f, 0.95f);
+        drawText("to recognize.", panelX+16, areaTop-71-scrollOffset,
+                 0.35f,0.35f,0.40f, 0.95f);
     } else if(hasResult){
-        float lineH  = (float)(fontSize + 4);
-        float scale  = (float)fontSize / 14.0f;
+        float lineH  = (float)(fontSize + 6);
+        float scale  = (float)fontSize / 12.0f;
         float ty     = areaTop - 8 - scrollOffset;
 
         // Feature 4: highlight low-confidence words in red
